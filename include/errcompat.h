@@ -1,9 +1,8 @@
 
-#ifdef NBIO_USE_WINSOCK2
-#define NBIO_USE_WINSOCK2
+#ifdef __ERRCOMPAT_H__
+#define __ERRCOMPAT_H__ 
 
 /* Just for sanity's sake, we define these with the "standard" UNIX meanings */
-
 #define EINTR 4
 #define EAGAIN 11
 #define EFAULT 14
@@ -20,5 +19,5 @@
 #define ETIMEDOUT 110
 #define EINPROGRESS 115
 
-#endif /* def NBIO_USE_WINSOCK2 */
+#endif /* def __ERRCOMPAT_H__ */
 
