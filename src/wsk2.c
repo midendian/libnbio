@@ -55,11 +55,73 @@ ssize_t __fdt_wsaread(int fd, void *buf, size_t count)
 	int ret;
 
 	if ((ret = recv(fd, buf, len, 0)) == SOCKET_ERROR) {
-			wsa_seterrno();
-			return -1;
+		wsa_seterrno();
+		return -1;
 	}
 
 	return ret;
+}
+
+ssize_t __fdt_wsawrite(int fd, const void *buf, size_t count)
+{
+	int ret;
+
+	if ((ret = send(fd, buf, len, 0)) == SOCKET_ERROR) {
+		wsa_seterrno();
+		return -1;
+	}
+
+	return ret;
+}
+
+int pfdinit(nbio_t *nb, int pfdsize)
+{
+	return;
+}
+
+void pfdkill(nbio_t *nb)
+{
+	return;
+}
+
+int pfdadd(nbio_t *nb, nbio_fd_t *newfd)
+{
+	return;
+}
+
+void pfdaddfinish(nbio_t *nb, nbio_fd_t *newfd)
+{
+	return;
+}
+
+void pfdrem(nbio_t *nb, nbio_fd_t *fdt)
+{
+	return;
+}
+
+void pfdfree(nbio_fd_t *fdt)
+{
+	return;
+}
+
+int pfdpoll(nbio_t *nb, int timeout)
+{
+	return;
+}
+
+void fdt_setpollin(nbio_t *nb, nbio_fd_t *fdt, int val)
+{
+	return;
+}
+
+void fdt_setpollout(nbio_t *nb, nbio_fd_t *fdt, int val)
+{
+	return;
+}
+
+void fdt_setpollnone(nbio_t *nb, nbio_fd_t *fdt)
+{
+	return;
 }
 
 #endif /* NBIO_USE_WINSOCK2 */

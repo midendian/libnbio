@@ -20,6 +20,8 @@ void freefdt(nbio_fd_t *fdt);
 
 
 /* Common API */
+
+/* provided by implementation */
 int pfdinit(nbio_t *nb, int pfdsize);
 void pfdkill(nbio_t *nb);
 int pfdadd(nbio_t *nb, nbio_fd_t *newfd);
@@ -30,6 +32,8 @@ int pfdpoll(nbio_t *nb, int timeout);
 void fdt_setpollin(nbio_t *nb, nbio_fd_t *fdt, int val);
 void fdt_setpollout(nbio_t *nb, nbio_fd_t *fdt, int val);
 void fdt_setpollnone(nbio_t *nb, nbio_fd_t *fdt);
+
+/* provided by libnbio.c */
 int __fdt_ready_in(nbio_t *nb, nbio_fd_t *fdt);
 int __fdt_ready_out(nbio_t *nb, nbio_fd_t *fdt);
 int __fdt_ready_eof(nbio_t *nb, nbio_fd_t *fdt);
