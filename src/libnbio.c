@@ -52,18 +52,6 @@ nbio_fd_t *nbio_getfdt(nbio_t *nb, int fd)
 	return NULL;
 }
 
-/* Wrapper for UNIX. */
-int __fdt_read(nbio_fd_t *fdt, void *buf, int count)
-{
-	return read(fdt->fd, buf, count);
-}
-
-/* Wrapper for UNIX. */
-int __fdt_write(nbio_fd_t *fdt, const void *buf, int count)
-{
-	return write(fdt->fd, buf, count);
-}
-
 static int streamread_nodelim(nbio_t *nb, nbio_fd_t *fdt)
 {
 	nbio_buf_t *cur;

@@ -53,7 +53,7 @@ static void wsa_seterrno(void)
 	return;
 }
 
-ssize_t __fdt_wsaread(int fd, void *buf, size_t count)
+int __fdt_read(nbio_fd_t *fdt, void *buf, int count)
 {
 	int ret;
 
@@ -65,7 +65,7 @@ ssize_t __fdt_wsaread(int fd, void *buf, size_t count)
 	return ret;
 }
 
-ssize_t __fdt_wsawrite(int fd, const void *buf, size_t count)
+int __fdt_write(nbio_fd_t *fdt, const void *buf, int count)
 {
 	int ret;
 

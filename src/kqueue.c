@@ -19,6 +19,17 @@
 #include <sys/types.h>
 #include <sys/event.h>
 
+/* Wrapper for UNIX. */
+int fdt_read(nbio_fd_t *fdt, void *buf, int count)
+{
+	return read(fdt->fd, buf, count);
+}
+
+/* Wrapper for UNIX. */
+int fdt_write(nbio_fd_t *fdt, const void *buf, int count)
+{
+	return write(fdt->fd, buf, count);
+}
 
 static struct kevent *getnextchange(nbio_t *nb)
 {
