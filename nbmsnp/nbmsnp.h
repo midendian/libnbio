@@ -13,7 +13,7 @@
 #include <sys/socket.h>
 #endif
 
-#ifdef HAVE_NETINET_IN_H_
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 
