@@ -1,5 +1,7 @@
 /* -*- Mode: ab-c -*- */
 
+#include <config.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -10,12 +12,12 @@
 #include <sys/poll.h>
 #include <time.h>
 
-#ifdef NBIO_USEKQUEUE
+#ifdef NBIO_USE_KQUEUE
 #include <sys/types.h>
 #include <sys/event.h>
 #endif
 
-#ifdef NBIO_USEKQUEUE
+#ifdef NBIO_USE_KQUEUE
 
 static struct kevent *getnextchange(nbio_t *nb)
 {
@@ -87,7 +89,7 @@ static void fdt_setpollnone(nbio_t *nb, nbio_fd_t *fdt)
 	return;
 }
 
-#else /* NBIO_USEKQUEUE */
+#else /* NBIO_USE_KQUEUE */
 
 #define NBIO_PFD_INVAL -1
 
@@ -368,7 +370,7 @@ static int dgramwrite(nbio_t *nb, nbio_fd_t *fdt)
 	return fdt->handler(nb, NBIO_EVENT_WRITE, fdt);
 }
 
-#ifdef NBIO_USEKQUEUE
+#ifdef NBIO_USE_KQUEUE
 
 static int pfdinit(nbio_t *nb, int pfdsize)
 {
@@ -447,7 +449,7 @@ static void pfdkill(nbio_t *nb)
 	return;
 }
 
-#endif /* NBIO_USEKQUEUE */
+#endif /* NBIO_USE_KQUEUE */
 
 int nbio_init(nbio_t *nb, int pfdsize)
 {
@@ -568,7 +570,7 @@ nbio_fd_t *nbio_addfd(nbio_t *nb, int type, int fd, int pri, nbio_handler_t hand
 		return NULL;
 	}
 
-#ifndef NBIO_USEKQUEUE
+#ifndef NBIO_USE_KQUEUE
 	if (!(newfd->pfd = findunusedpfd(nb))) {
 		/* XXX free up chains */
 		free(newfd);
@@ -596,7 +598,7 @@ nbio_fd_t *nbio_addfd(nbio_t *nb, int type, int fd, int pri, nbio_handler_t hand
 		fdt_setpollout(nb, newfd, 0);
 	}
 
-#ifndef NBIO_USEKQUEUE
+#ifndef NBIO_USE_KQUEUE
 	setpfdlast(nb);
 #endif
 
@@ -626,7 +628,7 @@ int nbio_closefdt(nbio_t *nb, nbio_fd_t *fdt)
 	close(fdt->fd);
 	fdt->fd = -1;
 
-#ifndef NBIO_USEKQUEUE
+#ifndef NBIO_USE_KQUEUE
 	if (fdt->pfd) {
 		fdt->pfd->fd = NBIO_PFD_INVAL;
 		fdt->pfd->events = fdt->pfd->revents = 0;
@@ -726,7 +728,7 @@ int nbio_cleanuponly(nbio_t *nb)
 	return 0;
 }
 
-#ifdef NBIO_USEKQUEUE
+#ifdef NBIO_USE_KQUEUE
 
 int nbio_poll(nbio_t *nb, int timeout)
 {
@@ -884,7 +886,7 @@ int nbio_poll(nbio_t *nb, int timeout)
 
 	return pollret;
 }
-#endif /* NBIO_USEKQUEUE */
+#endif /* NBIO_USE_KQUEUE */
 
 int nbio_setpri(nbio_t *nb, nbio_fd_t *fdt, int pri)
 {
