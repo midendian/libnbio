@@ -53,7 +53,7 @@ static void wsa_seterrno(void)
 	return;
 }
 
-int __fdt_read(nbio_fd_t *fdt, void *buf, int count)
+int fdt_read(nbio_fd_t *fdt, void *buf, int count)
 {
 	int ret;
 
@@ -65,7 +65,7 @@ int __fdt_read(nbio_fd_t *fdt, void *buf, int count)
 	return ret;
 }
 
-int __fdt_write(nbio_fd_t *fdt, const void *buf, int count)
+int fdt_write(nbio_fd_t *fdt, const void *buf, int count)
 {
 	int ret;
 
@@ -76,6 +76,20 @@ int __fdt_write(nbio_fd_t *fdt, const void *buf, int count)
 
 	return ret;
 }
+
+void fdt_close(nbio_fd_t *fdt)
+{
+
+	close(fdt->fd);
+
+	return;
+}
+
+int fdt_setnonblock(int fd)
+{
+	return -1;
+}
+
 
 int pfdinit(nbio_t *nb, int pfdsize)
 {

@@ -27,18 +27,6 @@ struct pfdnbdata {
 	int pfdlast;
 };
 
-/* Wrapper for UNIX. */
-int fdt_read(nbio_fd_t *fdt, void *buf, int count)
-{
-	return read(fdt->fd, buf, count);
-}
-
-/* Wrapper for UNIX. */
-int fdt_write(nbio_fd_t *fdt, const void *buf, int count)
-{
-	return write(fdt->fd, buf, count);
-}
-
 static int setpfdlast(nbio_t *nb)
 {
 	struct pfdnbdata *pnd = (struct pfdnbdata *)nb->intdata;

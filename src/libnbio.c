@@ -13,7 +13,6 @@
 
 #include <stdlib.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <string.h>
 
 /* XXX this should be elimitated by using more bookkeeping */
@@ -286,16 +285,6 @@ static int preallocchains(nbio_fd_t *fdt, int rxlen, int txlen)
 	return 0;
 }
 
-static int set_nonblock(int fd)
-{
-	int flags;
-
-	if ((flags = fcntl(fd, F_GETFL, 0)) == -1)
-		return -1;
-
-	return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-}
-
 nbio_fd_t *nbio_addfd(nbio_t *nb, int type, int fd, int pri, nbio_handler_t handler, void *priv, int rxlen, int txlen)
 {
 	nbio_fd_t *newfd;
@@ -317,7 +306,7 @@ nbio_fd_t *nbio_addfd(nbio_t *nb, int type, int fd, int pri, nbio_handler_t hand
 		return NULL;
 	}
 
-	if (set_nonblock(fd) < 0)
+	if (fdt_setnonblock(fd) == -1)
 		return NULL;
 
 	if (!(newfd = malloc(sizeof(nbio_fd_t)))) {
@@ -388,7 +377,7 @@ int nbio_closefdt(nbio_t *nb, nbio_fd_t *fdt)
 
 	fdt_setpollnone(nb, fdt);
 
-	close(fdt->fd);
+	fdt_close(fdt);
 	fdt->fd = -1;
 
 	pfdrem(nb, fdt);
