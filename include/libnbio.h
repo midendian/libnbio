@@ -3,20 +3,17 @@
 #ifndef __LIBNBIO_H__
 #define __LIBNBIO_H__
 
-/*
- * kqueue is a replacement for select/poll on FreeBSD and NetBSD.
- * Supposedly its faster, but I haven't gotten anything to show it.
- *
- */
-#undef NBIO_USEKQUEUE
+#include <time.h> /* for time_t */
 
 #define NBIO_MAX_DELIMITER_LEN 4 /* normally one of \n, \r, \r\n, \r\n\r\n */
+
 
 typedef struct nbio_buf_s {
 	unsigned char *data;
 	int len;
 	int offset;
 	time_t trigger; /* time at which the event should be triggered */
+	void *intdata;
 	struct nbio_buf_s *next;
 } nbio_buf_t;
 
@@ -25,10 +22,12 @@ typedef struct nbio_buf_s {
 #define NBIO_FDTYPE_STREAM    1
 #define NBIO_FDTYPE_DGRAM     2
 
+
 #define NBIO_EVENT_READ      0
 #define NBIO_EVENT_WRITE     1
 #define NBIO_EVENT_ERROR     2
 #define NBIO_EVENT_EOF       3
+
 
 typedef unsigned short nbio_fdt_flags_t;
 
@@ -66,15 +65,17 @@ typedef unsigned short nbio_fdt_flags_t;
  */
 #define NBIO_FDT_FLAG_KEEPDELIM    0x0008
 
+
 typedef struct nbio_delim_s {
 	unsigned char len;
 	unsigned char data[NBIO_MAX_DELIMITER_LEN];
 	struct nbio_delim_s *next;
 } nbio_delim_t;
 
+
 typedef struct nbio_fd_s {
 	int type;
-	int fd;
+	int fd; /* XXX should be generic, for win32 fd = SOCKET */
 	nbio_fdt_flags_t flags;
 	int (*handler)(void *, int event, struct nbio_fd_s *); /* nbio_handler_t */
 	void *priv;
@@ -85,10 +86,7 @@ typedef struct nbio_fd_s {
 	nbio_buf_t *txchain;
 	nbio_buf_t *txchain_tail;
 	nbio_buf_t *txchain_freelist;
-#ifdef NBIO_USEKQUEUE
-#else
-	struct pollfd *pfd;
-#endif
+	void *intdata;
 	struct nbio_fd_s *next;
 } nbio_fd_t;
 
@@ -97,6 +95,8 @@ typedef int (*nbio_handler_t)(void *, int event, nbio_fd_t *);
 typedef struct {
 	nbio_fd_t *fdlist;
 	int maxpri;
+	void *intdata;
+#if 0
 #ifdef NBIO_USEKQUEUE
 	int kq;
 	struct kevent *kqevents;
@@ -108,6 +108,7 @@ typedef struct {
 	struct pollfd *pfds;
 	int pfdsize;
 	int pfdlast;
+#endif
 #endif
 } nbio_t;
 
@@ -135,13 +136,14 @@ unsigned char *nbio_remtoptxvector(nbio_t *nb, nbio_fd_t *fdt, int *len, int *of
 int nbio_rxavail(nbio_t *nb, nbio_fd_t *fdt);
 int nbio_txavail(nbio_t *nb, nbio_fd_t *fdt);
 
+
 /*
  * Stream delimiters.
  *
- * When a delimiter is found in a stream, the application
- * is called regardless of whether a buffer was completly filled
- * or not.  Additionally, the delimiter will be read off the 
- * stream, but will not be copied into the user buffer.
+ * When a delimiter is found in a stream, the application is called 
+ * regardless of whether a buffer was completly filled or not.  Additionally, 
+ * the delimiter will be read off the stream, but will not be copied into the 
+ * user buffer (unless NBIO_FDT_FLAG_KEEPDELIM is set).
  *
  * For undelimited streams, either never call adddelim() or setdelim(),
  * or call cleardelim().
@@ -163,5 +165,6 @@ int nbio_cleardelim(nbio_fd_t *fdt);
  * Set or clear the KEEPDELIM flag. 
  */
 int nbio_setkeepdelim(nbio_fd_t *fdt, int val);
+
 
 #endif /* __LIBNBIO_H__ */
