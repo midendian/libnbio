@@ -15,7 +15,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
-#include <sys/poll.h>
 
 /* XXX this should be elimitated by using more bookkeeping */
 static void setmaxpri(nbio_t *nb)
