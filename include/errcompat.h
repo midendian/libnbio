@@ -1,5 +1,5 @@
 
-#ifdef __ERRCOMPAT_H__
+#ifndef __ERRCOMPAT_H__
 #define __ERRCOMPAT_H__ 
 
 /* Just for sanity's sake, we define these with the "standard" UNIX meanings */
