@@ -79,7 +79,6 @@ struct msninfo {
 	/* MSN-related */
 	const char *login;
 	const char *password;
-	void *trids; /* used only in special.c */
 	nbio_fd_t *nsconn;
 	ntrid_t nexttrid;
 	time_t lastnsdata;

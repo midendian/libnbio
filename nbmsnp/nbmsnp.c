@@ -101,7 +101,7 @@ int main(int argc, char **argv)
 		MI_STATE_DISCONNECTED,
 		MI_RUNFLAG_NONE,
 		&gnb,
-		NULL, NULL, NULL, NULL, 0, 0, /* MSN stuff */
+		NULL, NULL, NULL, 0, 0, /* MSN stuff */
 	};
 	const char *host = NULL;
 	char password[128+1] = {""};
