@@ -43,7 +43,7 @@ static void wsa_seterrno(void)
 		errno = EMSGSIZE;
 	else if (err == WSAEINVAL)
 		errno = EINVAL;
-	else if (err == WSACONNABORTED)
+	else if (err == WSAECONNABORTED)
 		errno = ECONNABORTED;
 	else if (err == WSAETIMEDOUT)
 		errno = ETIMEDOUT;
@@ -59,7 +59,7 @@ int fdt_read(nbio_fd_t *fdt, void *buf, int count)
 {
 	int ret;
 
-	if ((ret = recv(fd, buf, len, 0)) == SOCKET_ERROR) {
+	if ((ret = recv(fdt->fd, buf, count, 0)) == SOCKET_ERROR) {
 		wsa_seterrno();
 		return -1;
 	}
@@ -71,7 +71,7 @@ int fdt_write(nbio_fd_t *fdt, const void *buf, int count)
 {
 	int ret;
 
-	if ((ret = send(fd, buf, len, 0)) == SOCKET_ERROR) {
+	if ((ret = send(fdt->fd, buf, count, 0)) == SOCKET_ERROR) {
 		wsa_seterrno();
 		return -1;
 	}
@@ -102,7 +102,8 @@ static int wsainit(void)
 	if ((WSAStartup(reqver, &wsadata)) != 0)
 		return -1;
 
-	if ((LOBYTE(wsadata.wVersion != 2) || (HIBYTE(wsadata.wVersion != 2)) {
+	if ((LOBYTE(wsadata.wVersion) != 2) || 
+			(HIBYTE(wsadata.wVersion) != 2)) {
 		WSACleanup();
 		return -1;
 	}
@@ -116,7 +117,7 @@ int pfdinit(nbio_t *nb, int pfdsize)
 	if (wsainit() == -1)
 		return -1;
 
-	return;
+	return 0;
 }
 
 void pfdkill(nbio_t *nb)
@@ -129,7 +130,7 @@ void pfdkill(nbio_t *nb)
 
 int pfdadd(nbio_t *nb, nbio_fd_t *newfd)
 {
-	return;
+	return -1;
 }
 
 void pfdaddfinish(nbio_t *nb, nbio_fd_t *newfd)
@@ -149,7 +150,7 @@ void pfdfree(nbio_fd_t *fdt)
 
 int pfdpoll(nbio_t *nb, int timeout)
 {
-	return;
+	return -1;
 }
 
 void fdt_setpollin(nbio_t *nb, nbio_fd_t *fdt, int val)
