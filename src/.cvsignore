@@ -1,4 +1,7 @@
 Makefile
 Makefile.in
 .deps
+*.lo
+*.la
+.libs
 
