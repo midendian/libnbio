@@ -9,8 +9,11 @@
 
 #ifdef NBIO_USE_KQUEUE
 
-#include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+
+#include <stdlib.h>
 #include <errno.h>
 
 #include <sys/types.h>

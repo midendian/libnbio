@@ -9,8 +9,11 @@
 
 #if !defined(NBIO_USE_KQUEUE) && !defined(NBIO_USE_WINSOCK2)
 
-#include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+
+#include <stdlib.h>
 #include <errno.h>
 
 #include <sys/poll.h>

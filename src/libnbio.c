@@ -7,8 +7,11 @@
 #include <libnbio.h>
 #include "impl.h"
 
-#include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+
+#include <stdlib.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
