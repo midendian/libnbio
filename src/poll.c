@@ -201,8 +201,6 @@ int pfdpoll(nbio_t *nb, int timeout)
 
 		return -1;
 
-	} else if (pollret == 0) {
-		return 0;
 	}
 
 	for (curpri = nb->maxpri; curpri >= 0; curpri--) {

@@ -3,6 +3,10 @@
 #ifndef __LIBNBIO_H__
 #define __LIBNBIO_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <time.h> /* for time_t */
 
 #define NBIO_MAX_DELIMITER_LEN 4 /* normally one of \n, \r, \r\n, \r\n\r\n */
@@ -41,7 +45,7 @@ typedef struct nbio_buf_s {
 #define NBIO_EVENT_CONNECTED      4 /* connection succeeded */
 #define NBIO_EVENT_CONNECTFAILED  5 /* connection failed */
 #define NBIO_EVENT_RESOLVERESULT  6 /* result of a resolver operation */
-
+#define NBIO_EVENT_TIMEREXPIRE    7 /* timer expired */
 
 typedef unsigned short nbio_fdt_flags_t;
 
@@ -109,6 +113,8 @@ typedef struct nbio_fd_s {
 	nbio_buf_t *txchain_tail;
 	nbio_buf_t *txchain_freelist;
 	void *intdata;
+	int timerinterval;
+	time_t timernextfire;
 	struct nbio_fd_s *next;
 } nbio_fd_t;
 
@@ -146,6 +152,7 @@ int nbio_cleanuponly(nbio_t *nb);
 int nbio_poll(nbio_t *nb, int timeout);
 int nbio_setpri(nbio_t *nb, nbio_fd_t *fdt, int pri);
 int nbio_connect(nbio_t *nb, const struct sockaddr *addr, int addrlen, nbio_handler_t handler, void *priv);
+int nbio_settimer(nbio_t *nb, nbio_fd_t *fdt, int interval);
 
 int nbio_addrxvector(nbio_t *nb, nbio_fd_t *fdt, unsigned char *buf, int buflen, int offset);
 int nbio_addrxvector_time(nbio_t *nb, nbio_fd_t *fdt, unsigned char *buf, int buflen, int offset, time_t trigger);
@@ -187,6 +194,10 @@ int nbio_cleardelim(nbio_fd_t *fdt);
  * Set or clear the KEEPDELIM flag. 
  */
 int nbio_setkeepdelim(nbio_fd_t *fdt, int val);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif /* __LIBNBIO_H__ */

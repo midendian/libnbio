@@ -41,6 +41,20 @@ static void setmaxpri(nbio_t *nb)
 	return;
 }
 
+int nbio_settimer(nbio_t *nb, nbio_fd_t *fdt, int interval)
+{
+
+	if (!nb || !fdt || (interval < 0)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	fdt->timerinterval = interval;
+	fdt->timernextfire = time(NULL) + interval;
+
+	return 0;
+}
+
 /* Since this skips INTERNAL, it is useful only for outside callers. */
 nbio_fd_t *nbio_iter(nbio_t *nb, int (*matcher)(nbio_t *nb, void *ud, nbio_fd_t *fdt), void *userdata)
 {
@@ -356,6 +370,7 @@ nbio_fd_t *nbio_addfd(nbio_t *nb, int type, nbio_sockfd_t fd, int pri, nbio_hand
 	newfd->delims = NULL;
 	newfd->handler = handler;
 	newfd->priv = priv;
+	newfd->timerinterval = 0;
 	newfd->rxchain = newfd->txchain = newfd->txchain_tail = NULL;
 	newfd->rxchain_freelist = newfd->txchain_freelist = NULL;
 	if (preallocchains(newfd, rxlen, txlen) < 0) {
@@ -572,6 +587,19 @@ int __fdt_ready_eof(nbio_t *nb, nbio_fd_t *fdt)
 
 int __fdt_ready_all(nbio_t *nb, nbio_fd_t *fdt)
 {
+
+	if (fdt->timerinterval) {
+		time_t now;
+
+		now = time(NULL);
+
+		if (fdt->timernextfire <= now) {
+
+			fdt->handler(nb, NBIO_EVENT_TIMEREXPIRE, fdt);
+
+			fdt->timernextfire = time(NULL) + fdt->timerinterval;
+		}
+	}
 
 	if ((fdt->flags & NBIO_FDT_FLAG_CLOSEONFLUSH) && !fdt->txchain)
 		fdt->handler(nb, NBIO_EVENT_EOF, fdt);
