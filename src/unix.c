@@ -38,12 +38,20 @@ int fdt_setnonblock(int fd)
 
 int fdt_read(nbio_fd_t *fdt, void *buf, int count)
 {
-	return read(fdt->fd, buf, count);
+	int ret;
+
+	ret = read(fdt->fd, buf, count);
+
+	return ret;
 }
 
 int fdt_write(nbio_fd_t *fdt, const void *buf, int count)
 {
-	return write(fdt->fd, buf, count);
+	int ret;
+	
+	ret = write(fdt->fd, buf, count);
+
+	return ret;
 }
 
 void fdt_close(nbio_fd_t *fdt)

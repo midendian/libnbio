@@ -635,17 +635,32 @@ int nbio_setraw(nbio_t *nb, nbio_fd_t *fdt, int val)
 		return -1;
 	}
 
+	/* clear previous state */
+	fdt->flags &= ~(NBIO_FDT_FLAG_RAW | NBIO_FDT_FLAG_RAWREAD);
+	fdt_setpollnone(nb, fdt);
+
 	if (val == 2) {
+
 		fdt->flags |= NBIO_FDT_FLAG_RAWREAD;
+
 		fdt_setpollin(nb, fdt, 1);
-		fdt_setpollout(nb, fdt, 0);
+
+		/*
+		 * RAWREAD mode still uses POLLOUT.
+		 *
+		 * Only clear POLLOUT if there are no pending buffers. In
+		 * the case that there are, then set POLLOUT, wait for them
+		 * to be sent, and pollout will be cleared by itself.
+		 */
+		fdt_setpollout(nb, fdt, fdt->txchain ? 1 : 0);
+
 	} else if (val) {
+
 		fdt->flags |= NBIO_FDT_FLAG_RAW;
 		fdt_setpollin(nb, fdt, 1);
 		fdt_setpollout(nb, fdt, 1);
+
 	} else {
-		fdt->flags &= ~(NBIO_FDT_FLAG_RAW | NBIO_FDT_FLAG_RAWREAD);
-		fdt_setpollnone(nb, fdt);
 		if (fdt->rxchain)
 			fdt_setpollin(nb, fdt, 1);
 		if (fdt->txchain)

@@ -7,6 +7,14 @@
 extern "C" {
 #endif
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+
 #include <time.h> /* for time_t */
 
 #define NBIO_MAX_DELIMITER_LEN 4 /* normally one of \n, \r, \r\n, \r\n\r\n */
