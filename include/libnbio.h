@@ -1,4 +1,3 @@
-/* -*- Mode: ab-c -*- */
 
 #ifndef __LIBNBIO_H__
 #define __LIBNBIO_H__
