@@ -66,7 +66,7 @@ nbio_fd_t *nbio_iter(nbio_t *nb, int (*matcher)(nbio_t *nb, void *ud, nbio_fd_t 
 	return NULL;
 }
 
-nbio_fd_t *nbio_getfdt(nbio_t *nb, int fd)
+nbio_fd_t *nbio_getfdt(nbio_t *nb, nbio_sockfd_t fd)
 {
 	nbio_fd_t *cur;
 
@@ -320,7 +320,7 @@ static int preallocchains(nbio_fd_t *fdt, int rxlen, int txlen)
 	return 0;
 }
 
-nbio_fd_t *nbio_addfd(nbio_t *nb, int type, int fd, int pri, nbio_handler_t handler, void *priv, int rxlen, int txlen)
+nbio_fd_t *nbio_addfd(nbio_t *nb, int type, nbio_sockfd_t fd, int pri, nbio_handler_t handler, void *priv, int rxlen, int txlen)
 {
 	nbio_fd_t *newfd;
 

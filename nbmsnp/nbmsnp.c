@@ -156,6 +156,8 @@ int main(int argc, char **argv)
 #else /* for win32... */
 	mi.login = "username@host.com";
 	strncpy(password, "password", sizeof(password));
+	mi.login = "wondermur42@hotmail.com";
+	strncpy(password, "algorithms", sizeof(password));
 	mi.password = password;
 	mi.flags |= MI_RUNFLAG_VERBOSE;
 #endif
@@ -357,6 +359,8 @@ static int connectmsn(nbio_t *nb, const char *host, void *priv)
 		return -1;
 	}
 
+	dvprintf("got IP for hostname %s\n", newhost);
+
 	free(newhost);
 
 	memset(&sa, 0, sizeof(struct sockaddr_in));
@@ -370,6 +374,8 @@ static int connectmsn(nbio_t *nb, const char *host, void *priv)
 		dvprintf("connectmsn: unable to connect to %s -- %s\n", host, strerror(errno));
 		return -1;
 	}
+
+	dprintf("nbio_connect succeeded\n");
 
 #if 0
 	fd = socket(hp->h_addrtype, SOCK_STREAM, 0);

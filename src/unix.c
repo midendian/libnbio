@@ -54,6 +54,11 @@ void fdt_close(nbio_fd_t *fdt)
 	return;
 }
 
+int fdt_newsocket(nbio_t *nb, int family, int type)
+{
+	return socket(family, type, 0);
+}
+
 struct connectinginfo {
 	nbio_handler_t handler;
 	void *handlerpriv;
@@ -128,7 +133,7 @@ int fdt_connect(nbio_t *nb, const struct sockaddr *addr, int addrlen, nbio_handl
 		return -1;
 	}
 
-	if ((fd = socket(addr->sa_family, SOCK_STREAM, 0)) == -1)
+	if ((fd = fdt_newsocket(nb, addr->sa_family, SOCK_STREAM)) == -1)
 		return -1;
 
 	if (fdt_setnonblock(fd) == -1) {

@@ -8,8 +8,15 @@
 #define NBIO_MAX_DELIMITER_LEN 4 /* normally one of \n, \r, \r\n, \r\n\r\n */
 
 #ifdef NBIO_USE_WINSOCK2
+
 #include <winsock2.h>
 #include <errcompat.h>
+
+typedef SOCKET nbio_sockfd_t;
+
+#else
+
+typedef int nbio_sockfd_t;
 #endif
 
 typedef struct nbio_buf_s {
@@ -27,12 +34,14 @@ typedef struct nbio_buf_s {
 #define NBIO_FDTYPE_DGRAM     2
 
 
-#define NBIO_EVENT_READ           0
-#define NBIO_EVENT_WRITE          1
-#define NBIO_EVENT_ERROR          2
-#define NBIO_EVENT_EOF            3
-#define NBIO_EVENT_CONNECTED      4
-#define NBIO_EVENT_CONNECTFAILED  5
+#define NBIO_EVENT_READ           0 /* buffer read (or socket is readable) */
+#define NBIO_EVENT_WRITE          1 /* buffer written (or socket is writable) */
+#define NBIO_EVENT_ERROR          2 /* error encountered */
+#define NBIO_EVENT_EOF            3 /* EOF encountered */
+#define NBIO_EVENT_CONNECTED      4 /* connection succeeded */
+#define NBIO_EVENT_CONNECTFAILED  5 /* connection failed */
+#define NBIO_EVENT_RESOLVERESULT  6 /* result of a resolver operation */
+
 
 typedef unsigned short nbio_fdt_flags_t;
 
@@ -88,7 +97,7 @@ typedef struct nbio_delim_s {
 
 typedef struct nbio_fd_s {
 	int type;
-	int fd; /* XXX should be generic, for win32 fd = SOCKET */
+	nbio_sockfd_t fd;
 	nbio_fdt_flags_t flags;
 	int (*handler)(void *, int event, struct nbio_fd_s *); /* nbio_handler_t */
 	void *priv;
@@ -127,10 +136,10 @@ int nbio_kill(nbio_t *nb);
 void nbio_alleofforce(nbio_t *nb);
 void nbio_flushall(nbio_t *nb);
 nbio_fd_t *nbio_iter(nbio_t *nb, int (*matcher)(nbio_t *nb, void *ud, nbio_fd_t *fdt), void *userdata);
-nbio_fd_t *nbio_getfdt(nbio_t *nb, int fd);
-nbio_fd_t *nbio_addfd(nbio_t *nb, int type, int fd, int pri, nbio_handler_t handler, void *priv, int rxlen, int txlen);
+nbio_fd_t *nbio_getfdt(nbio_t *nb, nbio_sockfd_t fd);
+nbio_fd_t *nbio_addfd(nbio_t *nb, int type, nbio_sockfd_t fd, int pri, nbio_handler_t handler, void *priv, int rxlen, int txlen);
 int nbio_closefdt(nbio_t *nb, nbio_fd_t *fdt);
-int nbio_closefd(nbio_t *nb, int fd);
+int nbio_closefd(nbio_t *nb, nbio_sockfd_t fd);
 int nbio_setraw(nbio_t *nb, nbio_fd_t *fdt, int val);
 int nbio_setcloseonflush(nbio_fd_t *fdt, int val);
 int nbio_cleanuponly(nbio_t *nb);
