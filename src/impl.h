@@ -16,7 +16,7 @@ int __fdt_read(nbio_fd_t *fdt, void *buf, int count);
 int __fdt_write(nbio_fd_t *fdt, const void *buf, int count);
 
 /* for calling inside poll implementations */
-void freefdt(nbio_fd_t *fdt);
+void __fdt_free(nbio_fd_t *fdt);
 
 
 /* Common API */

@@ -199,7 +199,7 @@ int pfdpoll(nbio_t *nb, int timeout)
 
 			if (cur->fd == -1) {
 				*prev = cur->next;
-				freefdt(cur);
+				__fdt_free(cur);
 				continue;
 			} 
 

@@ -303,17 +303,6 @@ static int set_nonblock(int fd)
 	return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
 
-static int set_block(int fd)
-{
-	int flags;
-	
-	if ((flags = fcntl(fd, F_GETFL, 0)) == -1)
-		return -1;
-
-	return fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
-}
-
-
 nbio_fd_t *nbio_addfd(nbio_t *nb, int type, int fd, int pri, nbio_handler_t handler, void *priv, int rxlen, int txlen)
 {
 	nbio_fd_t *newfd;
@@ -416,7 +405,7 @@ int nbio_closefdt(nbio_t *nb, nbio_fd_t *fdt)
 	return 0;
 }
 
-void freefdt(nbio_fd_t *fdt)
+void __fdt_free(nbio_fd_t *fdt)
 {
 	nbio_buf_t *buf, *tmp;
 
@@ -490,7 +479,7 @@ int nbio_cleanuponly(nbio_t *nb)
 	for (prev = &nb->fdlist; (cur = *prev); ) {
 		if (cur->fd == -1) {
 			*prev = cur->next;
-			freefdt(cur);
+			__fdt_free(cur);
 			continue;
 		} 
 
