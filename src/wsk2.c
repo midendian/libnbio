@@ -4,12 +4,12 @@
 #include <config.h>
 #endif
 
-#include <libnbio.h>
-#include "impl.h"
-
 #ifdef NBIO_USE_WINSOCK2
 
 #include <winsock2.h>
+
+#include <libnbio.h>
+#include "impl.h"
 
 static void wsa_seterrno(void)
 {

@@ -4,19 +4,27 @@
 #include <config.h>
 #endif
 
-#include <libnbio.h>
-#include "impl.h"
-
 #if !defined(NBIO_USE_KQUEUE) && !defined(NBIO_USE_WINSOCK2)
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+
 #include <stdlib.h>
 #include <errno.h>
 
 #include <sys/poll.h>
+
+#include <libnbio.h>
+#include "impl.h"
 
 #define NBIO_PFD_INVAL -1
 
@@ -203,7 +211,7 @@ int pfdpoll(nbio_t *nb, int timeout)
 		for (prev = &nb->fdlist; (cur = *prev); ) {
 			struct pollfd *pfd;
 
-			if (cur->fd == -1) {
+			if (cur->flags & NBIO_FDT_FLAG_CLOSED) {
 				*prev = cur->next;
 				__fdt_free(cur);
 				continue;
@@ -219,7 +227,6 @@ int pfdpoll(nbio_t *nb, int timeout)
 			if (pfd && pfd->revents & POLLIN) {
 				if (__fdt_ready_in(nb, cur) == -1)
 					return -1;
-
 			}
 
 			if (pfd && pfd->revents & POLLOUT) {

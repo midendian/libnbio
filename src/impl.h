@@ -6,6 +6,7 @@
 /* Common API */
 
 /* provided by implementation */
+int fdt_connect(nbio_t *nb, const struct sockaddr *addr, int addrlen, nbio_handler_t handler, void *priv);
 int fdt_read(nbio_fd_t *fdt, void *buf, int count);
 int fdt_write(nbio_fd_t *fdt, const void *buf, int count);
 void fdt_close(nbio_fd_t *fdt);

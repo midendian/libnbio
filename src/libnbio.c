@@ -4,9 +4,6 @@
 #include <config.h>
 #endif
 
-#include <libnbio.h>
-#include "impl.h"
-
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -15,6 +12,17 @@
 #include <errno.h>
 #include <string.h>
 
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+
+#include <libnbio.h>
+#include "impl.h"
+
 /* XXX this should be elimitated by using more bookkeeping */
 static void setmaxpri(nbio_t *nb)
 {
@@ -22,7 +30,7 @@ static void setmaxpri(nbio_t *nb)
 	int max = 0;
 
 	for (cur = nb->fdlist; cur; cur = cur->next) {
-		if (cur->fd == -1)
+		if (cur->flags & NBIO_FDT_FLAG_CLOSED)
 			continue;
 		if (cur->pri > max)
 			max = cur->pri;
@@ -43,6 +51,8 @@ nbio_fd_t *nbio_getfdt(nbio_t *nb, int fd)
 	}
 
 	for (cur = nb->fdlist; cur; cur = cur->next) {
+		if (cur->flags & NBIO_FDT_FLAG_IGNORE)
+			continue;
 		if (cur->fd == fd)
 			return cur;
 	}
@@ -367,7 +377,7 @@ int nbio_closefdt(nbio_t *nb, nbio_fd_t *fdt)
 		return -1;
 	}
 
-	if (fdt->fd == -1)
+	if (fdt->flags & NBIO_FDT_FLAG_CLOSED)
 		return 0;
 
 #if 0
@@ -379,6 +389,7 @@ int nbio_closefdt(nbio_t *nb, nbio_fd_t *fdt)
 
 	fdt_close(fdt);
 	fdt->fd = -1;
+	fdt->flags |= NBIO_FDT_FLAG_CLOSED;
 
 	pfdrem(nb, fdt);
 
@@ -420,7 +431,7 @@ void nbio_alleofforce(nbio_t *nb)
 	nbio_flushall(nb);
 
 	for (cur = nb->fdlist; cur; cur = cur->next) {
-		if (cur->fd == -1)
+		if (cur->flags & NBIO_FDT_FLAG_CLOSED)
 			continue;
 		if (cur->handler)
 			cur->handler(nb, NBIO_EVENT_EOF, cur);
@@ -436,7 +447,7 @@ void nbio_flushall(nbio_t *nb)
 	for (cur = nb->fdlist; cur; cur = cur->next) {
 		int i;
 
-		if (cur->fd == -1)
+		if (cur->flags & NBIO_FDT_FLAG_CLOSED)
 			continue;
 
 		/* Call each ten times just to make sure */
@@ -459,7 +470,8 @@ int nbio_cleanuponly(nbio_t *nb)
 	nbio_fd_t *cur = NULL, **prev = NULL;
 
 	for (prev = &nb->fdlist; (cur = *prev); ) {
-		if (cur->fd == -1) {
+
+		if (cur->flags & NBIO_FDT_FLAG_CLOSED) {
 			*prev = cur->next;
 			__fdt_free(cur);
 			continue;
@@ -472,6 +484,11 @@ int nbio_cleanuponly(nbio_t *nb)
 	}
 
 	return 0;
+}
+
+int nbio_connect(nbio_t *nb, const struct sockaddr *addr, int addrlen, nbio_handler_t handler, void *priv)
+{
+	return fdt_connect(nb, addr, addrlen, handler, priv);
 }
 
 int __fdt_ready_in(nbio_t *nb, nbio_fd_t *fdt)

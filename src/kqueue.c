@@ -4,13 +4,18 @@
 #include <config.h>
 #endif
 
-#include <libnbio.h>
-#include "impl.h"
-
 #ifdef NBIO_USE_KQUEUE
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
 #endif
 
 #include <stdlib.h>
@@ -18,6 +23,9 @@
 
 #include <sys/types.h>
 #include <sys/event.h>
+
+#include <libnbio.h>
+#include "impl.h"
 
 static struct kevent *getnextchange(nbio_t *nb)
 {

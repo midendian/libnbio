@@ -26,11 +26,12 @@ typedef struct nbio_buf_s {
 #define NBIO_FDTYPE_DGRAM     2
 
 
-#define NBIO_EVENT_READ      0
-#define NBIO_EVENT_WRITE     1
-#define NBIO_EVENT_ERROR     2
-#define NBIO_EVENT_EOF       3
-
+#define NBIO_EVENT_READ           0
+#define NBIO_EVENT_WRITE          1
+#define NBIO_EVENT_ERROR          2
+#define NBIO_EVENT_EOF            3
+#define NBIO_EVENT_CONNECTED      4
+#define NBIO_EVENT_CONNECTFAILED  5
 
 typedef unsigned short nbio_fdt_flags_t;
 
@@ -68,6 +69,8 @@ typedef unsigned short nbio_fdt_flags_t;
  */
 #define NBIO_FDT_FLAG_KEEPDELIM    0x0008
 
+#define NBIO_FDT_FLAG_IGNORE       0x0010
+#define NBIO_FDT_FLAG_CLOSED       0x0020
 
 typedef struct nbio_delim_s {
 	unsigned char len;
@@ -99,6 +102,7 @@ typedef struct {
 	nbio_fd_t *fdlist;
 	int maxpri;
 	void *intdata;
+	void *priv;
 #if 0
 #ifdef NBIO_USEKQUEUE
 	int kq;
@@ -107,10 +111,6 @@ typedef struct {
 	struct kevent *kqchanges;
 	int kqchangeslen;
 	int kqchangecount;
-#else
-	struct pollfd *pfds;
-	int pfdsize;
-	int pfdlast;
 #endif
 #endif
 } nbio_t;
@@ -128,6 +128,8 @@ int nbio_setcloseonflush(nbio_fd_t *fdt, int val);
 int nbio_cleanuponly(nbio_t *nb);
 int nbio_poll(nbio_t *nb, int timeout);
 int nbio_setpri(nbio_t *nb, nbio_fd_t *fdt, int pri);
+int nbio_connect(nbio_t *nb, const struct sockaddr *addr, int addrlen, nbio_handler_t handler, void *priv);
+
 int nbio_addrxvector(nbio_t *nb, nbio_fd_t *fdt, unsigned char *buf, int buflen, int offset);
 int nbio_addrxvector_time(nbio_t *nb, nbio_fd_t *fdt, unsigned char *buf, int buflen, int offset, time_t trigger);
 int nbio_remrxvector(nbio_t *nb, nbio_fd_t *fdt, unsigned char *buf);

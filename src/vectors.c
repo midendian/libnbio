@@ -4,10 +4,18 @@
 #include <config.h>
 #endif
 
-#include <libnbio.h>
-#include "impl.h"
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
 
 #include <errno.h>
+
+#include <libnbio.h>
+#include "impl.h"
 
 static nbio_buf_t *getrxbuf(nbio_fd_t *fdt)
 {
