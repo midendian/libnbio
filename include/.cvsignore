@@ -5,3 +5,4 @@ Makefile.in
 stamp-h.in
 config.h.in
 
+stamp-h1
