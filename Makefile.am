@@ -1,3 +1,3 @@
 
-SUBDIRS = include src
+SUBDIRS = include src nbmsnp
 

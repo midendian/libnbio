@@ -1,0 +1,15 @@
+
+nbmsnp is small implemention of Microsoft's MSNP Instant Messenging
+protocol.  Since IM is apparently my forte, and I know it well and can test it
+quickly and painlessly, I chose an IM protocol as a test client for libnbio.
+Specifically I chose MSNP because of it is the most I/O intensive that I
+know of -- connections opening all the time, along with the servers going
+up and down on a regular basis.  It seems like the perfect stress test for an
+I/O library.  It also uses delimited streams instead of binary headers like 
+some of the other protocols.
+
+The point is that this is here for testing only, and not meant to be useful.
+Messages it receives are dropped.
+
+
+
