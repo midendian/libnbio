@@ -168,5 +168,10 @@ void fdt_setpollnone(nbio_t *nb, nbio_fd_t *fdt)
 	return;
 }
 
+int fdt_connect(nbio_t *nb, const struct sockaddr *addr, int addrlen, nbio_handler_t handler, void *priv)
+{
+	return -1;
+}
+
 #endif /* NBIO_USE_WINSOCK2 */
 

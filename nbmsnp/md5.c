@@ -21,7 +21,7 @@
   ghost@aladdin.com
 
  */
-/*$Id: md5.c,v 1.1 2001/12/02 06:31:28 mid Exp $ */
+/*$Id: md5.c,v 1.2 2001/12/02 10:19:34 mid Exp $ */
 /*
   Independent implementation of MD5 (RFC 1321).
 
@@ -37,6 +37,10 @@
   1999-10-18 lpd Fixed typo in header comment (ansi2knr rather than md5).
   1999-05-03 lpd Original version.
  */
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include "md5.h"
 #include <string.h>

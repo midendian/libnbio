@@ -3,14 +3,28 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdlib.h>
+
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+
+#ifdef HAVE_NETDB_H
 #include <netdb.h>
+#endif
+
 #include <string.h>
 #include <signal.h>
-#include <getopt.h>
 #include <errno.h>
+
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
+
 #include "nbmsnp.h"
 
 static nbio_t gnb;
@@ -20,10 +34,10 @@ char *dprintf_ctime(void)
 {
 	static char retbuf[64];
 	struct tm *lt;
-	struct timeval tv;
+	time_t now;
 
-	gettimeofday(&tv, NULL);
-	lt = localtime((time_t *)&tv.tv_sec);
+	now = time(NULL);
+	lt = localtime(&now);
 	strftime(retbuf, 64, "%b %e %H:%M:%S %Z", lt);
 
 	return retbuf;
@@ -91,7 +105,8 @@ int main(int argc, char **argv)
 	time_t lastrun, loginstart, lastping;
 	int logintimeout = 1;
 
-	while ((i = getopt(argc, argv, "B:r:l:p:s:hb:dvT:")) != EOF) {
+#if 0
+	while ((i = getopt(argc, argv, "l:p:s:hvT:")) != EOF) {
 		if (i == 'l')
 			mi.login = optarg;
 		else if (i == 'p') {
@@ -134,6 +149,13 @@ int main(int argc, char **argv)
 		goto usage;
 	}
 
+#else /* for win32... */
+	mi.login = "username@host.com";
+	strncpy(password, "password", sizeof(password));
+	mi.password = password;
+	mi.flags |= MI_RUNFLAG_VERBOSE;
+#endif
+
 	nbio_init(&gnb, 8192);
 	gnb.priv = (void *)&mi;
 
@@ -142,8 +164,14 @@ int main(int argc, char **argv)
 
 	signal(SIGINT, sigint);
 	signal(SIGTERM, sigint);
+
+#ifdef SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
+#endif
+
+#ifdef SIGUSR2
  	signal(SIGUSR2, sigusr2);
+#endif
 
 	if (!host)
 		host = defaulthost;
@@ -250,7 +278,7 @@ static int connectmsn_handler(void *nbv, int event, nbio_fd_t *fdt)
 
 		if (!(mci->fdt = nbio_addfd(nb, NBIO_FDTYPE_STREAM, fdt->fd, 0, msn_callback, (void *)mci, 2, 64))) {
 			dvprintf("nbio_addfd: %s\n", strerror(errno));
-			close(fdt->fd);
+			nbio_closefdt(nb, fdt); /* XXX is this right? */
 			free(mci);
 			return 0;
 		}
@@ -310,13 +338,13 @@ static int connectmsn(nbio_t *nb, const char *host, void *priv)
 {
 	struct sockaddr_in sa;
 	struct hostent *hp;
-	int port = 1863;
+	unsigned short port = 1863;
 	char *newhost;
 
 	newhost = strdup(host);
-	if (index(newhost, ':')) {
-		port = atoi(index(newhost, ':')+1);
-		*(index(newhost, ':')) = '\0';
+	if (strchr(newhost, ':')) {
+		port = (unsigned short) atoi(strchr(newhost, ':')+1);
+		*(strchr(newhost, ':')) = '\0';
 	}
 
 	if (!(hp = gethostbyname(newhost ? newhost : host))) { 
@@ -518,7 +546,7 @@ static int handlecmd(nbio_fd_t *fdt)
 	if (mci->state == MCI_STATE_WAITINGFORCMD) {
 		int ret = 0;
 
-		if (strncasecmp(buf, "MSG", 3) == 0) {
+		if (strncmp(buf, "MSG", 3) == 0) {
 			char *dataptr, *handle, *custom, *lenstr;
 			int msglen;
 
@@ -538,13 +566,13 @@ static int handlecmd(nbio_fd_t *fdt)
 			dataptr = buf+4; /* "MSG " */
 			handle = dataptr;
 
-			if (!(custom = index(handle, ' '))) {
+			if (!(custom = strchr(handle, ' '))) {
 				fdterror(fdt, "handlecmd: parse error for MSG");
 				free(buf);
 				return -2;
 			}
 			custom++;
-			if (!(lenstr = index(custom, ' '))) {
+			if (!(lenstr = strchr(custom, ' '))) {
 				fdterror(fdt, "handlecmd: parse error for MSG (len)");
 				free(buf);
 				return -2;

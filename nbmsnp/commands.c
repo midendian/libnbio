@@ -1,4 +1,8 @@
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -112,7 +116,7 @@ static int msn_errisfatal(int err)
 	return 1; /* unknown errors default to FATAL */
 }
 
-#define iscmd(b, c) (strncasecmp(b, c, 3) == 0)
+#define iscmd(b, c) (strncmp(b, c, 3) == 0)
 static const char *wl_getawaitinguser(void);
 
 int processmsncmd(nbio_fd_t *fdt, char *buf, char *payload)
@@ -129,14 +133,14 @@ int processmsncmd(nbio_fd_t *fdt, char *buf, char *payload)
 			/* MSG mid@zigamorph.net mid@zigamorph.net 90 */
 
 			sender = buf + strlen("MSG") + 1;
-			sendercustom = index(sender, ' ');
+			sendercustom = strchr(sender, ' ');
 			*sendercustom = '\0';
 			sendercustom++;
-			lenstr = index(sendercustom, ' ');
+			lenstr = strchr(sendercustom, ' ');
 			*lenstr = '\0';
 			lenstr++;
 
-			if (strcasecmp(sender, mci->name) != 0) {
+			if (strcmp(sender, mci->name) != 0) {
 				fdterror(fdt, "chat has become non-binary -- leaving.");
 				return -2;
 			}
@@ -169,7 +173,7 @@ int processmsncmd(nbio_fd_t *fdt, char *buf, char *payload)
 		char *tridstr, *sp;
 
 		tridstr = buf + strlen("INF") + 1;
-		sp = index(tridstr, ' ');
+		sp = strchr(tridstr, ' ');
 		*sp = '\0';
 		sp++;
 
@@ -187,15 +191,15 @@ int processmsncmd(nbio_fd_t *fdt, char *buf, char *payload)
 		char *tridstr, *sp, *seq = NULL, *info = NULL;
 
 		tridstr = buf + strlen("USR") + 1;
-		sp = index(tridstr, ' ');
+		sp = strchr(tridstr, ' ');
 		*sp = '\0';
 		sp++;
 
-		if (strncasecmp(sp, "OK", 2) != 0) {
-			seq = index(sp, ' ');
+		if (strncmp(sp, "OK", 2) != 0) {
+			seq = strchr(sp, ' ');
 			*seq = '\0';
 			seq++;
-			info = index(seq, ' ');
+			info = strchr(seq, ' ');
 			*info = '\0';
 			info++;
 		}
@@ -211,7 +215,7 @@ int processmsncmd(nbio_fd_t *fdt, char *buf, char *payload)
 		} else if ((mci->type == MCI_TYPE_NS) &&
 				(mci->mi->state == MI_STATE_NS_SENTUSR_S)) {
 
-			if (strncasecmp(sp, "OK", 2) != 0)
+			if (strncmp(sp, "OK", 2) != 0)
 				return -1;
 
 			dprintf("logged in\n");
@@ -222,7 +226,7 @@ int processmsncmd(nbio_fd_t *fdt, char *buf, char *payload)
 
 		} else if (mci->type == MCI_TYPE_SB) {
 
-			if (strncasecmp(sp, "OK", 2) != 0)
+			if (strncmp(sp, "OK", 2) != 0)
 				return -1;
 
 			if (mci->flags & MCI_FLAG_HASNAME)
@@ -233,24 +237,24 @@ int processmsncmd(nbio_fd_t *fdt, char *buf, char *payload)
 		char *tridstr, *type, *ip, *sp, *cki = NULL;
 
 		tridstr = buf + strlen("XFR") + 1;
-		type = index(tridstr, ' ');
+		type = strchr(tridstr, ' ');
 		*type = '\0';
 		type++;
-		ip = index(type, ' ');
+		ip = strchr(type, ' ');
 		*ip = '\0';
 		ip++;
-		sp = index(ip, ' ');
+		sp = strchr(ip, ' ');
 		*sp = '\0';
 		sp++;
 		if (strncmp(sp, "CKI", 3) == 0) {
-			cki = index(sp, ' ');
+			cki = strchr(sp, ' ');
 			*cki = '\0';
 			cki++;
 		}
 
 		if ((mci->type == MCI_TYPE_DS) &&
 				(mci->mi->state == MI_STATE_SENTUSR_I) &&
-				(strncasecmp(type, "NS", 2) == 0)) {
+				(strncmp(type, "NS", 2) == 0)) {
 
 			dvprintf("connecting to NS %s...\n", ip);
 			if (addmsnconn(mci->mi, ip, MCI_TYPE_NS, NULL, NULL, -1) == -1)
@@ -272,19 +276,19 @@ int processmsncmd(nbio_fd_t *fdt, char *buf, char *payload)
 		char *tridstr, *ip, *sp, *cki, *name, *custom;
 
 		tridstr = buf + strlen("RNG") + 1;
-		ip = index(tridstr, ' ');
+		ip = strchr(tridstr, ' ');
 		*ip = '\0';
 		ip++;
-		sp = index(ip, ' ');
+		sp = strchr(ip, ' ');
 		*sp = '\0';
 		sp++;
-		cki = index(sp, ' ');
+		cki = strchr(sp, ' ');
 		*cki = '\0';
 		cki++;
-		name = index(cki, ' ');
+		name = strchr(cki, ' ');
 		*name = '\0';
 		name++;
-		if ((custom = index(name, ' '))) {
+		if ((custom = strchr(name, ' '))) {
 			*custom = '\0';
 			custom++;
 		}
@@ -296,22 +300,22 @@ int processmsncmd(nbio_fd_t *fdt, char *buf, char *payload)
 		char *tridstr, *num, *total, *name, *custom;
 
 		tridstr = buf + strlen("IRO") + 1;
-		num = index(tridstr, ' ');
+		num = strchr(tridstr, ' ');
 		*num = '\0';
 		num++;
-		total = index(num, ' ');
+		total = strchr(num, ' ');
 		*total = '\0';
 		total++;
-		name = index(total, ' ');
+		name = strchr(total, ' ');
 		*name = '\0';
 		name++;
-		if ((custom = index(name, ' '))) {
+		if ((custom = strchr(name, ' '))) {
 			*custom = '\0';
 			custom++;
 		}
 
 		if ((mci->flags & MCI_FLAG_HASNAME) && 
-				(strcasecmp(mci->name, name) != 0)) {
+				(strcmp(mci->name, name) != 0)) {
 			fdterror(fdt, "chat has become non-binary -- leaving.");
 			return -2;
 		}
@@ -324,16 +328,16 @@ int processmsncmd(nbio_fd_t *fdt, char *buf, char *payload)
 		char *tridstr, *name, *custom;
 
 		tridstr = buf + strlen("JOI") + 1;
-		name = index(tridstr, ' ');
+		name = strchr(tridstr, ' ');
 		*name = '\0';
 		name++;
-		if ((custom = index(name, ' '))) {
+		if ((custom = strchr(name, ' '))) {
 			*custom = '\0';
 			custom++;
 		}
 
 		if ((mci->flags & MCI_FLAG_HASNAME) &&
-				(strcasecmp(mci->name, name) != 0)) {
+				(strcmp(mci->name, name) != 0)) {
 			fdterror(fdt, "chat has become non-binary -- leaving.");
 			return -2;
 		}
@@ -346,7 +350,7 @@ int processmsncmd(nbio_fd_t *fdt, char *buf, char *payload)
 		char *tridstr, *status;
 
 		tridstr = buf + strlen("ANS") + 1;
-		status = index(tridstr, ' ');
+		status = strchr(tridstr, ' ');
 		*status = '\0';
 		status++;
 
@@ -381,26 +385,26 @@ int processmsncmd(nbio_fd_t *fdt, char *buf, char *payload)
 		char *tridstr, *list, *serid, *num, *total, *handle = NULL, *custom = NULL;
 
 		tridstr = buf + strlen("LST") + 1;
-		list = index(tridstr, ' ');
+		list = strchr(tridstr, ' ');
 		*list = '\0';
 		list++;
-		serid = index(list, ' ');
+		serid = strchr(list, ' ');
 		*serid = '\0';
 		serid++;
-		num = index(serid, ' ');
+		num = strchr(serid, ' ');
 		*num = '\0';
 		num++;
-		total = index(num, ' ');
+		total = strchr(num, ' ');
 		*total = '\0';
 		total++;
 
 		if (atoi(num) >= atoi(total))
 			mci->mi->flags &= ~MI_RUNFLAG_PNGCURBED;
 
-		if ((handle = index(total, ' '))) {
+		if ((handle = strchr(total, ' '))) {
 			*handle = '\0';
 			handle++;
-			custom = index(handle, ' ');
+			custom = strchr(handle, ' ');
 			*custom = '\0';
 			custom++;
 		}
@@ -531,7 +535,7 @@ static nbio_fd_t *findsbbyname(struct msninfo *mi, const char *name)
 		if (!(mci->flags & MCI_FLAG_SBREADY))
 			continue;
 
-		if (strcasecmp(mci->name, name) == 0)
+		if (strcmp(mci->name, name) == 0)
 			return fdt;
 	}
 

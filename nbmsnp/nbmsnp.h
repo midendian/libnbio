@@ -2,10 +2,26 @@
 #ifndef __NBMSNP_H__
 #define __NBMSNP_H__
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
+#include <stdarg.h>
+
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
+
+#ifdef HAVE_NETINET_IN_H_
 #include <netinet/in.h>
+#endif
+
 #include <libnbio.h>
+
+#ifdef WIN32
+#define snprintf _snprintf
+#endif
 
 #define MODULE_NAME "nbmsnp"
 

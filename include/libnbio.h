@@ -8,6 +8,7 @@
 #define NBIO_MAX_DELIMITER_LEN 4 /* normally one of \n, \r, \r\n, \r\n\r\n */
 
 #ifdef NBIO_USE_WINSOCK2
+#include <winsock2.h>
 #include <errcompat.h>
 #endif
 
