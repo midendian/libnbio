@@ -1,3 +1,20 @@
+/*
+ * nbmsnp - Example code for libnbio
+ * Copyright (c) 2002 Adam Fritzler <mid@zigamorph.net>
+ *
+ * nbmsnp is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License (version 2) as published by the Free
+ * Software Foundation.
+ *
+ * nbmsnp is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -125,7 +142,7 @@ int processmsncmd(nbio_fd_t *fdt, char *buf, char *payload)
 
 	if (iscmd(buf, "MSG")) {
 
-		if ((mci->type == MCI_TYPE_SB) && 
+		if ((mci->type == MCI_TYPE_SB) &&
 				(mci->flags & MCI_FLAG_HASNAME) &&
 				payload) {
 			char *sender, *sendercustom, *lenstr;
@@ -153,7 +170,7 @@ int processmsncmd(nbio_fd_t *fdt, char *buf, char *payload)
 				imfromservice(fdt, sender, payload);
 			}
 		}
-	
+
 	} else if (iscmd(buf, "VER")) {
 
 		if ((mci->type == MCI_TYPE_DS) &&
@@ -295,7 +312,7 @@ int processmsncmd(nbio_fd_t *fdt, char *buf, char *payload)
 
 		if (addmsnconn(mci->mi, ip, MCI_TYPE_SB, name, cki, atoi(tridstr)) == -1)
 			return 0; /* Not being able to open an SB is not fatal */
-		
+
 	} else if (iscmd(buf, "IRO")) {
 		char *tridstr, *num, *total, *name, *custom;
 
@@ -314,7 +331,7 @@ int processmsncmd(nbio_fd_t *fdt, char *buf, char *payload)
 			custom++;
 		}
 
-		if ((mci->flags & MCI_FLAG_HASNAME) && 
+		if ((mci->flags & MCI_FLAG_HASNAME) &&
 				(strcmp(mci->name, name) != 0)) {
 			fdterror(fdt, "chat has become non-binary -- leaving.");
 			return -2;
@@ -370,11 +387,11 @@ int processmsncmd(nbio_fd_t *fdt, char *buf, char *payload)
 
 	} else if (iscmd(buf, "QNG")) {
 
-		/* 
+		/*
 		 * Ignored.
 		 *
-		 * The timer is reset when ANY data is recieved, not 
-		 * just a QNG 
+		 * The timer is reset when ANY data is recieved, not
+		 * just a QNG
 		 */
 
 	} else if (iscmd(buf, "CAL")) {
@@ -467,20 +484,20 @@ int sendmsncmd(nbio_fd_t *fdt, const char *cmd, int usetrid, ntrid_t trid, const
 
 	if (mci->mi->flags & MI_RUNFLAG_VERBOSE) {
 		dvprintf("[%s%s%s, %s, %s] <--- SENT: %s\n",
-			(mci && 
+			(mci &&
 			 (mci->type == MCI_TYPE_DS)) ?
 				"DS" : "",
-			(mci && 
-			 (mci->type == MCI_TYPE_NS)) ? 
+			(mci &&
+			 (mci->type == MCI_TYPE_NS)) ?
 				"NS" : "",
-			(mci && 
-			 (mci->type == MCI_TYPE_SB)) ? 
+			(mci &&
+			 (mci->type == MCI_TYPE_SB)) ?
 				"SB" : "",
-			(mci && 
+			(mci &&
 			 (mci->flags & MCI_FLAG_HASNAME)) ?
 				mci->name : "unknown",
-			(mci && 
-			 (mci->flags & MCI_FLAG_HASHOSTNAME)) ? 
+			(mci &&
+			 (mci->flags & MCI_FLAG_HASHOSTNAME)) ?
 				mci->hostname : "unknown host",
 			buf);
 	}
@@ -665,7 +682,7 @@ ntrid_t sendmsnmsg(struct msninfo *mi, nbio_fd_t *passedfdt, const char *name, c
 
 	if (tmpstr)
 		free(tmpstr);
-	
+
 	if (sendmsncmd(dstfdt, "MSG", 1, trid, buf) == -1)
 		return 0;
 

@@ -1,4 +1,22 @@
 /*
+ * nbmsnp - Example code for libnbio
+ * Copyright (c) 2002 Adam Fritzler <mid@zigamorph.net>
+ *
+ * nbmsnp is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License (version 2) as published by the Free
+ * Software Foundation.
+ *
+ * nbmsnp is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
+/*
  * Microsoft MSNP5.
  *
  */
@@ -176,7 +194,7 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef SIGUSR2
- 	signal(SIGUSR2, sigusr2);
+	signal(SIGUSR2, sigusr2);
 #endif
 
 	if (!host)
@@ -202,7 +220,7 @@ int main(int argc, char **argv)
 			lastrun = now;
 		}
 
-		if ((mi.state != MI_STATE_LOGGEDIN) && 
+		if ((mi.state != MI_STATE_LOGGEDIN) &&
 				((now - loginstart) > (logintimeout*60))) {
 			dvprintf("MSN is taking too long to log in ... giving up after %ld seconds.\n", (now - loginstart));
 			mi.state = MI_STATE_DISCONNECTED;
@@ -221,7 +239,7 @@ int main(int argc, char **argv)
 		 * Check for the failure case (too long without NS data while
 		 * ENAPNG is set).
 		 */
-		if ((mi.state == MI_STATE_LOGGEDIN) && 
+		if ((mi.state == MI_STATE_LOGGEDIN) &&
 				(mi.flags & MI_RUNFLAG_PNGENA) &&
 				!(mi.flags & MI_RUNFLAG_PNGCURBED) &&
 				((now - mi.lastnsdata) > 60)) {
@@ -234,7 +252,7 @@ int main(int argc, char **argv)
 		 * data while ENAPNG is not set -- and set it).
 		 */
 		if ((mi.state == MI_STATE_LOGGEDIN) &&
-				!(mi.flags & MI_RUNFLAG_PNGENA) && 
+				!(mi.flags & MI_RUNFLAG_PNGENA) &&
 				(now - mi.lastnsdata) > 30) {
 			dvprintf("gone %ld seconds without NS data, enabling PNG\n", now - mi.lastnsdata);
 			mi.flags |= MI_RUNFLAG_PNGENA;
@@ -301,7 +319,7 @@ static int connectmsn_handler(void *nbv, int event, nbio_fd_t *fdt)
 			return conndeath(nb, mci->fdt);
 
 		if ((mci->type == MCI_TYPE_DS) || (mci->type == MCI_TYPE_NS)) {
-	
+
 			/* This starts the state machine commands.c */
 			fdterror(mci->fdt, "sending versions...");
 			msn_sendver(mci->fdt, "MSNP5");
@@ -315,7 +333,7 @@ static int connectmsn_handler(void *nbv, int event, nbio_fd_t *fdt)
 				(mci->flags & MCI_FLAG_HASNAME) &&
 				(mci->flags & MCI_FLAG_HASCKI) &&
 				(mci->flags & MCI_FLAG_HASSESSID)) {
-	
+
 			msn_sendans(mci->fdt, mci->mi->login, mci->cki, mci->sessid);
 
 		} else if ((mci->type == MCI_TYPE_SB) &&
@@ -353,7 +371,7 @@ static int connectmsn(nbio_t *nb, const char *host, void *priv)
 		*(strchr(newhost, ':')) = '\0';
 	}
 
-	if (!(hp = gethostbyname(newhost ? newhost : host))) { 
+	if (!(hp = gethostbyname(newhost ? newhost : host))) {
 		dvprintf("connectmsn: unable to connect to %s -- gethostbyname failed\n", host);
 		free(newhost);
 		return -1;
@@ -368,8 +386,8 @@ static int connectmsn(nbio_t *nb, const char *host, void *priv)
 	memcpy(&sa.sin_addr, hp->h_addr, hp->h_length);
 	sa.sin_family = hp->h_addrtype;
 
-	if (nbio_connect(&gnb, (struct sockaddr *)&sa, 
-				sizeof(struct sockaddr_in), 
+	if (nbio_connect(&gnb, (struct sockaddr *)&sa,
+				sizeof(struct sockaddr_in),
 				connectmsn_handler, priv) == -1) {
 		dvprintf("connectmsn: unable to connect to %s -- %s\n", host, strerror(errno));
 		return -1;
@@ -460,8 +478,8 @@ int conndeath(nbio_t *nb, nbio_fd_t *fdt)
 	if (fdt == mci->mi->nsconn)
 		mci->mi->nsconn = NULL;
 
-	if ((((mci->type == MCI_TYPE_DS) && 
-				(mci->mi->state < MI_STATE_XFR_TO_NS))) || 
+	if ((((mci->type == MCI_TYPE_DS) &&
+				(mci->mi->state < MI_STATE_XFR_TO_NS))) ||
 			(mci->type == MCI_TYPE_NS)) {
 
 		fdterror(fdt, "major connection death");
@@ -474,7 +492,7 @@ int conndeath(nbio_t *nb, nbio_fd_t *fdt)
 
 		if (mci->mi->flags & MI_RUNFLAG_VERBOSE) {
 			dvprintf("switchboard died (%s, %s)\n",
-					(mci->flags & MCI_FLAG_HASNAME) ? 
+					(mci->flags & MCI_FLAG_HASNAME) ?
 						mci->name :
 						"unassociated",
 					(mci->flags & MCI_FLAG_HASHOSTNAME) ?
@@ -500,7 +518,7 @@ int fdterror(nbio_fd_t *fdt, const char *msg)
 			(mci && (mci->type == MCI_TYPE_SB)) ? "SB" : "",
 			(mci && (mci->flags & MCI_FLAG_HASNAME)) ?
 				mci->name : "unknown",
-			(mci && (mci->flags & MCI_FLAG_HASHOSTNAME)) ? 
+			(mci && (mci->flags & MCI_FLAG_HASHOSTNAME)) ?
 				mci->hostname : "unknown host",
 			msg);
 
@@ -518,7 +536,7 @@ int fdtperror(nbio_fd_t *fdt, const char *func, int err, const char *msg)
 			(mci && (mci->type == MCI_TYPE_SB)) ? "SB" : "",
 			(mci && (mci->flags & MCI_FLAG_HASNAME)) ?
 				mci->name : "unknown",
-			(mci && (mci->flags & MCI_FLAG_HASHOSTNAME)) ? 
+			(mci && (mci->flags & MCI_FLAG_HASHOSTNAME)) ?
 				mci->hostname : "unknown host",
 			func,
 			strerror(err),
@@ -529,9 +547,9 @@ int fdtperror(nbio_fd_t *fdt, const char *func, int err, const char *msg)
 
 /*
  * Return:
- * 	 0 - No error
- * 	-1 - Fatal error
- * 	-2 - Connection error, continue but close fdt.
+ *	 0 - No error
+ *	-1 - Fatal error
+ *	-2 - Connection error, continue but close fdt.
  *
  */
 static int handlecmd(nbio_fd_t *fdt)
@@ -562,7 +580,7 @@ static int handlecmd(nbio_fd_t *fdt)
 
 			/*
 			 * MSGs are special in that they contain a length
-			 * field that forces us to read farther and in an 
+			 * field that forces us to read farther and in an
 			 * undelimited state.
 			 *
 			 * This, right here, is why I hate the MSNP protocol.
@@ -625,23 +643,23 @@ static int handlecmd(nbio_fd_t *fdt)
 			return 0;
 
 		}
-	
+
 		if (mci->mi->flags & MI_RUNFLAG_VERBOSE) {
 			dvprintf("[%s%s%s, %s, %s] ---> RECEIVED: %s\n",
-				(mci && 
+				(mci &&
 				 (mci->type == MCI_TYPE_DS)) ?
 					"DS" : "",
-				(mci && 
-				 (mci->type == MCI_TYPE_NS)) ? 
+				(mci &&
+				 (mci->type == MCI_TYPE_NS)) ?
 					"NS" : "",
-				(mci && 
-				 (mci->type == MCI_TYPE_SB)) ? 
+				(mci &&
+				 (mci->type == MCI_TYPE_SB)) ?
 					"SB" : "",
-				(mci && 
+				(mci &&
 				 (mci->flags & MCI_FLAG_HASNAME)) ?
 					mci->name : "unknown",
-				(mci && 
-				 (mci->flags & MCI_FLAG_HASHOSTNAME)) ? 
+				(mci &&
+				 (mci->flags & MCI_FLAG_HASHOSTNAME)) ?
 					mci->hostname : "unknown host",
 				buf);
 		}
@@ -670,37 +688,37 @@ static int handlecmd(nbio_fd_t *fdt)
 
 		if (mci->mi->flags & MI_RUNFLAG_VERBOSE) {
 			dvprintf("[%s%s%s, %s, %s] ---> RECEIVED: %s\n",
-				(mci && 
+				(mci &&
 				 (mci->type == MCI_TYPE_DS)) ?
 					"DS" : "",
-				(mci && 
-				 (mci->type == MCI_TYPE_NS)) ? 
+				(mci &&
+				 (mci->type == MCI_TYPE_NS)) ?
 					"NS" : "",
-				(mci && 
-				 (mci->type == MCI_TYPE_SB)) ? 
+				(mci &&
+				 (mci->type == MCI_TYPE_SB)) ?
 					"SB" : "",
-				(mci && 
+				(mci &&
 				 (mci->flags & MCI_FLAG_HASNAME)) ?
 					mci->name : "unknown",
-				(mci && 
-				 (mci->flags & MCI_FLAG_HASHOSTNAME)) ? 
+				(mci &&
+				 (mci->flags & MCI_FLAG_HASHOSTNAME)) ?
 					mci->hostname : "unknown host",
 				buf);
 			dvprintf("[%s%s%s, %s, %s] ---> PAYLOAD: %s\n",
-				(mci && 
+				(mci &&
 				 (mci->type == MCI_TYPE_DS)) ?
 					"DS" : "",
-				(mci && 
-				 (mci->type == MCI_TYPE_NS)) ? 
+				(mci &&
+				 (mci->type == MCI_TYPE_NS)) ?
 					"NS" : "",
-				(mci && 
-				 (mci->type == MCI_TYPE_SB)) ? 
+				(mci &&
+				 (mci->type == MCI_TYPE_SB)) ?
 					"SB" : "",
-				(mci && 
+				(mci &&
 				 (mci->flags & MCI_FLAG_HASNAME)) ?
 					mci->name : "unknown",
-				(mci && 
-				 (mci->flags & MCI_FLAG_HASHOSTNAME)) ? 
+				(mci &&
+				 (mci->flags & MCI_FLAG_HASHOSTNAME)) ?
 					mci->hostname : "unknown host",
 				payload);
 		}

@@ -1,3 +1,20 @@
+/*
+ * nbmsnp - Example code for libnbio
+ * Copyright (c) 2002 Adam Fritzler <mid@zigamorph.net>
+ *
+ * nbmsnp is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License (version 2) as published by the Free
+ * Software Foundation.
+ *
+ * nbmsnp is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
 #ifndef __NBMSNP_H__
 #define __NBMSNP_H__
@@ -47,7 +64,7 @@ typedef unsigned long ntrid_t;
  * Output all I/O operations.
  *
  * XXX Should be seperated into several smaller options.
- * 
+ *
  */
 #define MI_RUNFLAG_VERBOSE 0x00000002
 
@@ -56,7 +73,7 @@ typedef unsigned long ntrid_t;
  * response is received (and the flag is disabled).
  *
  * This is a run-time state, not a configurable option.
- * 
+ *
  */
 #define MI_RUNFLAG_PNGENA  0x00010000
 
