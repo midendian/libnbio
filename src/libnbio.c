@@ -2,11 +2,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
 #include <libnbio.h>
 #include <sys/poll.h>
+#include <time.h>
 
 #ifdef NBIO_USEKQUEUE
 #include <sys/types.h>

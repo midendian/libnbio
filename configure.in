@@ -1,39 +1,33 @@
 AC_INIT(src/libnbio.c)
+AM_CONFIG_HEADER(include/config.h)
 AM_INIT_AUTOMAKE(libnbio, 0.10)
 
-AC_PREFIX_DEFAULT(/usr)
-AM_CONFIG_HEADER(include/config.h)
+AM_MAINTAINER_MODE
 
 AC_PROG_CC
-AC_PROG_INSTALL
-AC_PROG_LN_S
-AC_PROG_MAKE_SET
+AC_ISC_POSIX
+AC_HEADER_STDC
+AC_ARG_PROGRAM
 AM_PROG_LIBTOOL
 
-dnl LIBTOOL="$LIBTOOL --silent"
+NB_LDADD=
 
-AC_ARG_ENABLE(debug,    [  --disable-debug         compile without debugging options],enable_debug=no,enable_debug=yes)
+AC_ARG_ENABLE(kqueue,   [  --enable-kqeue   use kqueue/kevent instead of poll], enable_kqueue=yes, enable_kqueue=no)
 
-if test "$enable_debug" = yes ; then
-        CFLAGS="$CFLAGS -Wall -g"
+if test "x$enable_kqueue" = "xkqueue" ; then
+	AC_DEFINE(NBIO_USE_KQUEUE)
 fi
 
-AC_HEADER_STDC
-AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS(fcntl.h sys/time.h unistd.h)
-
-AC_C_CONST
-AC_C_INLINE
-AC_TYPE_SIZE_T
-
-AC_FUNC_MEMCMP
-AC_CHECK_FUNCS(gethostname gettimeofday socket strdup strstr strtol uname)
+dnl for systems that can't decide if they need libdl or not
+AC_CHECK_LIB(dl, dlopen, AP_LDADD="-ldl $NB_LDADD")
+AC_SUBST(NB_LDADD)
 
 AC_SUBST(CFLAGS)
+
+LIBTOOL="$LIBTOOL --silent"
 
 AC_OUTPUT([
 	Makefile
 	include/Makefile
 	src/Makefile
 ])
-
