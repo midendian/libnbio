@@ -208,7 +208,7 @@ int pfdpoll(nbio_t *nb, int timeout)
 	for (curpri = nb->maxpri; curpri >= 0; curpri--) {
 		nbio_fd_t *cur = NULL, **prev = NULL;
 
-		for (prev = &nb->fdlist; (cur = *prev); ) {
+		for (prev = (nbio_fd_t **)&nb->fdlist; (cur = *prev); ) {
 			struct pollfd *pfd;
 
 			if (cur->flags & NBIO_FDT_FLAG_CLOSED) {

@@ -73,6 +73,12 @@ typedef unsigned short nbio_fdt_flags_t;
 #define NBIO_FDT_FLAG_IGNORE       0x0010
 #define NBIO_FDT_FLAG_CLOSED       0x0020
 
+/*
+ * An internally managed connection.
+ */
+#define NBIO_FDT_FLAG_INTERNAL     0x0040
+
+
 typedef struct nbio_delim_s {
 	unsigned char len;
 	unsigned char data[NBIO_MAX_DELIMITER_LEN];
@@ -100,7 +106,7 @@ typedef struct nbio_fd_s {
 typedef int (*nbio_handler_t)(void *, int event, nbio_fd_t *);
 
 typedef struct {
-	nbio_fd_t *fdlist;
+	void *fdlist;
 	int maxpri;
 	void *intdata;
 	void *priv;
@@ -120,6 +126,7 @@ int nbio_init(nbio_t *nb, int pfdsize);
 int nbio_kill(nbio_t *nb);
 void nbio_alleofforce(nbio_t *nb);
 void nbio_flushall(nbio_t *nb);
+nbio_fd_t *nbio_iter(nbio_t *nb, int (*matcher)(nbio_t *nb, void *ud, nbio_fd_t *fdt), void *userdata);
 nbio_fd_t *nbio_getfdt(nbio_t *nb, int fd);
 nbio_fd_t *nbio_addfd(nbio_t *nb, int type, int fd, int pri, nbio_handler_t handler, void *priv, int rxlen, int txlen);
 int nbio_closefdt(nbio_t *nb, nbio_fd_t *fdt);

@@ -29,7 +29,7 @@ static void setmaxpri(nbio_t *nb)
 	nbio_fd_t *cur;
 	int max = 0;
 
-	for (cur = nb->fdlist; cur; cur = cur->next) {
+	for (cur = (nbio_fd_t *)nb->fdlist; cur; cur = cur->next) {
 		if (cur->flags & NBIO_FDT_FLAG_CLOSED)
 			continue;
 		if (cur->pri > max)
@@ -41,6 +41,31 @@ static void setmaxpri(nbio_t *nb)
 	return;
 }
 
+/* Since this skips INTERNAL, it is useful only for outside callers. */
+nbio_fd_t *nbio_iter(nbio_t *nb, int (*matcher)(nbio_t *nb, void *ud, nbio_fd_t *fdt), void *userdata)
+{
+	nbio_fd_t *cur;
+
+	if (!nb || !matcher) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	for (cur = (nbio_fd_t *)nb->fdlist; cur; cur = cur->next) {
+
+		if (cur->flags & NBIO_FDT_FLAG_IGNORE)
+			continue;
+		if (cur->flags & NBIO_FDT_FLAG_INTERNAL)
+			continue;
+
+		if (matcher(nb, userdata, cur))
+			return cur;
+
+	}
+
+	return NULL;
+}
+
 nbio_fd_t *nbio_getfdt(nbio_t *nb, int fd)
 {
 	nbio_fd_t *cur;
@@ -50,7 +75,7 @@ nbio_fd_t *nbio_getfdt(nbio_t *nb, int fd)
 		return NULL;
 	}
 
-	for (cur = nb->fdlist; cur; cur = cur->next) {
+	for (cur = (nbio_fd_t *)nb->fdlist; cur; cur = cur->next) {
 		if (cur->flags & NBIO_FDT_FLAG_IGNORE)
 			continue;
 		if (cur->fd == fd)
@@ -257,7 +282,7 @@ int nbio_kill(nbio_t *nb)
 		return -1;
 	}
 
-	for (cur = nb->fdlist; cur; cur = cur->next)
+	for (cur = (nbio_fd_t *)nb->fdlist; cur; cur = cur->next)
 		nbio_closefdt(nb, cur);
 
 	nbio_cleanuponly(nb); /* to clean up the list */
@@ -361,8 +386,8 @@ nbio_fd_t *nbio_addfd(nbio_t *nb, int type, int fd, int pri, nbio_handler_t hand
 
 	pfdaddfinish(nb, newfd);
 
-	newfd->next = nb->fdlist;
-	nb->fdlist = newfd;
+	newfd->next = (nbio_fd_t *)nb->fdlist;
+	nb->fdlist = (void *)newfd;
 
 	setmaxpri(nb);
 
@@ -430,7 +455,7 @@ void nbio_alleofforce(nbio_t *nb)
 
 	nbio_flushall(nb);
 
-	for (cur = nb->fdlist; cur; cur = cur->next) {
+	for (cur = (nbio_fd_t *)nb->fdlist; cur; cur = cur->next) {
 		if (cur->flags & NBIO_FDT_FLAG_CLOSED)
 			continue;
 		if (cur->handler)
@@ -444,7 +469,7 @@ void nbio_flushall(nbio_t *nb)
 {
 	nbio_fd_t *cur;
 
-	for (cur = nb->fdlist; cur; cur = cur->next) {
+	for (cur = (nbio_fd_t *)nb->fdlist; cur; cur = cur->next) {
 		int i;
 
 		if (cur->flags & NBIO_FDT_FLAG_CLOSED)
@@ -469,7 +494,7 @@ int nbio_cleanuponly(nbio_t *nb)
 {
 	nbio_fd_t *cur = NULL, **prev = NULL;
 
-	for (prev = &nb->fdlist; (cur = *prev); ) {
+	for (prev = (nbio_fd_t **)&nb->fdlist; (cur = *prev); ) {
 
 		if (cur->flags & NBIO_FDT_FLAG_CLOSED) {
 			*prev = cur->next;

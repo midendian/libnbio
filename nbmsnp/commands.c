@@ -516,30 +516,32 @@ static const char *wl_getawaitinguser(void)
 	return waitinglist->name;
 }
 
+static int findsbbyname_matcher(nbio_t *nb, void *ud, nbio_fd_t *fdt)
+{
+	const char *name = (const char *)ud;
+	struct msnconninfo *mci = (struct msnconninfo *)fdt->priv;
+
+	if (fdt->type != NBIO_FDTYPE_STREAM)
+		return 0;
+
+	if (mci->type != MCI_TYPE_SB)
+		return 0;
+
+	if (!(mci->flags & MCI_FLAG_HASNAME))
+		return 0;
+
+	if (!(mci->flags & MCI_FLAG_SBREADY))
+		return 0;
+
+	if (strcmp(mci->name, name) == 0)
+		return 1;
+
+	return 0;
+}
+
 static nbio_fd_t *findsbbyname(struct msninfo *mi, const char *name)
 {
-	nbio_fd_t *fdt;
-
-	for (fdt = mi->nb->fdlist; fdt; fdt = fdt->next) {
-		struct msnconninfo *mci = (struct msnconninfo *)fdt->priv;
-
-		if (fdt->type != NBIO_FDTYPE_STREAM)
-			continue;
-
-		if (mci->type != MCI_TYPE_SB)
-			continue;
-
-		if (!(mci->flags & MCI_FLAG_HASNAME))
-			continue;
-
-		if (!(mci->flags & MCI_FLAG_SBREADY))
-			continue;
-
-		if (strcmp(mci->name, name) == 0)
-			return fdt;
-	}
-
-	return NULL;
+	return nbio_iter(mi->nb, findsbbyname_matcher, (void *)name);
 }
 
 void wl_trywaiting(struct msninfo *mi)

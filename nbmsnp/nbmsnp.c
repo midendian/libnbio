@@ -63,27 +63,31 @@ static void sigint(int signum)
 	return;
 }
 
+static int sigusr2_matcher(nbio_t *nb, void *ud, nbio_fd_t *fdt)
+{
+	struct msnconninfo *mci = (struct msnconninfo *)fdt->priv;
+
+	if (fdt->type != NBIO_FDTYPE_STREAM)
+		return 0;
+
+	if (!mci || (mci->type != MCI_TYPE_SB))
+		return 0;
+
+	if (mci->flags & MCI_FLAG_HASNAME)
+		dvprintf("closing SB for %s\n", mci->name);
+
+	conndeath(&gnb, fdt);
+
+	return 0; /* keep going */
+}
+
 static void sigusr2(int signum)
 {
 	struct msninfo *mi = (struct msninfo *)gnb.priv;
-	nbio_fd_t *fdt;
 
 	dprintf("clearing all SBs...\n");
 
-	for (fdt = gnb.fdlist; fdt; fdt = fdt->next) {
-		struct msnconninfo *mci = (struct msnconninfo *)fdt->priv;
-
-		if (fdt->type != NBIO_FDTYPE_STREAM)
-			continue;
-
-		if (!mci || (mci->type != MCI_TYPE_SB))
-			continue;
-
-		if (mci->flags & MCI_FLAG_HASNAME)
-			dvprintf("closing SB for %s\n", mci->name);
-
-		conndeath(&gnb, fdt);
-	}
+	nbio_iter(&gnb, sigusr2_matcher, NULL);
 
 	return;
 }
