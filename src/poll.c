@@ -38,7 +38,7 @@ static int setpfdlast(nbio_t *nb)
 	return i;
 }
 
-static void fdt_setpollin(nbio_t *nb, nbio_fd_t *fdt, int val)
+void fdt_setpollin(nbio_t *nb, nbio_fd_t *fdt, int val)
 {
 	struct pollfd *pfd = (struct pollfd *)fdt->intdata;
 
@@ -52,7 +52,7 @@ static void fdt_setpollin(nbio_t *nb, nbio_fd_t *fdt, int val)
 	return;
 }
 
-static void fdt_setpollout(nbio_t *nb, nbio_fd_t *fdt, int val)
+void fdt_setpollout(nbio_t *nb, nbio_fd_t *fdt, int val)
 {
 	struct pollfd *pfd = (struct pollfd *)fdt->intdata;
 
@@ -66,7 +66,7 @@ static void fdt_setpollout(nbio_t *nb, nbio_fd_t *fdt, int val)
 	return;
 }
 
-static void fdt_setpollnone(nbio_t *nb, nbio_fd_t *fdt)
+void fdt_setpollnone(nbio_t *nb, nbio_fd_t *fdt)
 {
 	struct pollfd *pfd = (struct pollfd *)fdt->intdata;
 
@@ -211,39 +211,24 @@ int pfdpoll(nbio_t *nb, int timeout)
 			pfd = (struct pollfd *)cur->intdata;
 
 			if (pfd && pfd->revents & POLLIN) {
-				if (cur->type == NBIO_FDTYPE_LISTENER) {
-					if (cur->handler(nb, NBIO_EVENT_READ, cur) < 0)
-						return -1; /* XXX do something better */
-				} else if (cur->type == NBIO_FDTYPE_STREAM) {
-					if (streamread(nb, cur) < 0)
-						return -1; /* XXX do something better */
-				} else if (cur->type == NBIO_FDTYPE_DGRAM) {
-					if (dgramread(nb, cur) < 0)
-						return -1; /* XXX do something better */
-				}
+				if (__fdt_ready_in(nb, cur) == -1)
+					return -1;
+
 			}
 
 			if (pfd && pfd->revents & POLLOUT) {
-				if (cur->type == NBIO_FDTYPE_LISTENER)
-					; /* invalid? */
-				else if (cur->type == NBIO_FDTYPE_STREAM) {
-					if (streamwrite(nb, cur) < 0)
-						return -1; /* XXX do something better */
-				} else if (cur->type == NBIO_FDTYPE_DGRAM) {
-					if (dgramwrite(nb, cur) < 0)
-						return -1; /* XXX do something better */
-				} 
+				if (__fdt_ready_out(nb, cur) == -1)
+					return -1;
 			}
 
 			if (pfd && ((pfd->revents & POLLERR) ||
 					 (pfd->revents & POLLHUP))) {
-
-				if ((cur->fd != NBIO_PFD_INVAL) && cur->handler)
-					cur->handler(nb, NBIO_EVENT_EOF, cur);
+				if (__fdt_ready_eof(nb, cur) == -1)
+					return -1;
 			}
 
-			if ((cur->flags & NBIO_FDT_FLAG_CLOSEONFLUSH) && !cur->txchain)
-				cur->handler(nb, NBIO_EVENT_EOF, cur);
+			if (__fdt_ready_all(nb, cur) == -1)
+				return -1;
 
 			prev = &cur->next;
 		}

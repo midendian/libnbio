@@ -53,6 +53,12 @@ int __fdt_read(nbio_fd_t *fdt, void *buf, int count)
 	return read(fdt->fd, buf, count);
 }
 
+/* Wrapper for UNIX. */
+int __fdt_write(nbio_fd_t *fdt, const void *buf, int count)
+{
+	return write(fdt->fd, buf, count);
+}
+
 static int streamread_nodelim(nbio_t *nb, nbio_fd_t *fdt)
 {
 	nbio_buf_t *cur;
@@ -188,7 +194,7 @@ static int streamwrite(nbio_t *nb, nbio_fd_t *fdt)
 
 	target = cur->len - cur->offset;
 
-	if (((wrote = fdt_write(fdt->fd, cur->data+cur->offset, target)) < 0) && (errno != EINTR) && (errno != EAGAIN)) {
+	if (((wrote = fdt_write(fdt, cur->data+cur->offset, target)) < 0) && (errno != EINTR) && (errno != EAGAIN)) {
 		return fdt->handler(nb, NBIO_EVENT_ERROR, fdt);
 	}
 
@@ -410,7 +416,7 @@ int nbio_closefdt(nbio_t *nb, nbio_fd_t *fdt)
 	return 0;
 }
 
-static void freefdt(nbio_fd_t *fdt)
+void freefdt(nbio_fd_t *fdt)
 {
 	nbio_buf_t *buf, *tmp;
 
@@ -493,6 +499,69 @@ int nbio_cleanuponly(nbio_t *nb)
 
 		prev = &cur->next;
 	}
+
+	return 0;
+}
+
+int __fdt_ready_in(nbio_t *nb, nbio_fd_t *fdt)
+{
+
+	if (fdt->type == NBIO_FDTYPE_LISTENER) {
+
+		if (fdt->handler(nb, NBIO_EVENT_READ, fdt) < 0)
+			return -1;
+
+	} else if (fdt->type == NBIO_FDTYPE_STREAM) {
+
+		if (streamread(nb, fdt) < 0)
+			return -1;
+
+	} else if (fdt->type == NBIO_FDTYPE_DGRAM) {
+
+		if (dgramread(nb, fdt) < 0)
+			return -1;
+
+	}
+
+	return 0;
+}
+
+int __fdt_ready_out(nbio_t *nb, nbio_fd_t *fdt)
+{
+
+	if (fdt->type == NBIO_FDTYPE_LISTENER) {
+
+		; /* invalid? */
+
+	} else if (fdt->type == NBIO_FDTYPE_STREAM) {
+
+		if (streamwrite(nb, fdt) < 0)
+			return -1; /* XXX do something better */
+
+	} else if (fdt->type == NBIO_FDTYPE_DGRAM) {
+
+		if (dgramwrite(nb, fdt) < 0)
+			return -1; /* XXX do something better */
+
+	} 
+
+	return 0;
+}
+
+int __fdt_ready_eof(nbio_t *nb, nbio_fd_t *fdt)
+{
+
+	if ((fdt->fd != -1) && fdt->handler)
+		fdt->handler(nb, NBIO_EVENT_EOF, fdt);
+
+	return 0;
+}
+
+int __fdt_ready_all(nbio_t *nb, nbio_fd_t *fdt)
+{
+
+	if ((fdt->flags & NBIO_FDT_FLAG_CLOSEONFLUSH) && !fdt->txchain)
+		fdt->handler(nb, NBIO_EVENT_EOF, fdt);
 
 	return 0;
 }

@@ -12,6 +12,8 @@ AM_PROG_LIBTOOL
 
 NB_LDADD=
 
+CFLAGS="$CFLAGS -Wall -g"
+
 AC_ARG_ENABLE(kqueue,   [  --enable-kqeue   use kqueue/kevent instead of poll], enable_kqueue=yes, enable_kqueue=no)
 
 if test "x$enable_kqueue" = "xyes" ; then
