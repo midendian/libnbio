@@ -1,4 +1,3 @@
-/* -*- Mode: ab-c -*- */
 
 #ifndef __IMPL_H__
 #define __IMPL_H__
