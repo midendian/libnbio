@@ -283,8 +283,7 @@ int pfdpoll(nbio_t *nb, int timeout)
 
 		return -1;
 
-	} else if (selret == 0)
-		return 0;
+	}
 
 	for (prev = (nbio_fd_t **)&nb->fdlist; (cur = *prev); ) {
 		struct fdtdata *data = (struct fdtdata *)cur->intdata;
