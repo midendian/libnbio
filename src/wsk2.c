@@ -9,6 +9,8 @@
 
 #ifdef NBIO_USE_WINSOCK2
 
+#include <winsock2.h>
+
 static void wsa_seterrno(void)
 {
 	int err;
@@ -80,7 +82,7 @@ int fdt_write(nbio_fd_t *fdt, const void *buf, int count)
 void fdt_close(nbio_fd_t *fdt)
 {
 
-	close(fdt->fd);
+	closesocket(fdt->fd);
 
 	return;
 }
@@ -90,14 +92,38 @@ int fdt_setnonblock(int fd)
 	return -1;
 }
 
+static int wsainit(void)
+{
+	WORD reqver;
+	WSADATA wsadata;
+
+	reqver = MAKEWORD(2,2);
+
+	if ((WSAStartup(reqver, &wsadata)) != 0)
+		return -1;
+
+	if ((LOBYTE(wsadata.wVersion != 2) || (HIBYTE(wsadata.wVersion != 2)) {
+		WSACleanup();
+		return -1;
+	}
+
+	return 0;
+}
 
 int pfdinit(nbio_t *nb, int pfdsize)
 {
+
+	if (wsainit() == -1)
+		return -1;
+
 	return;
 }
 
 void pfdkill(nbio_t *nb)
 {
+
+	WSACleanup();
+
 	return;
 }
 

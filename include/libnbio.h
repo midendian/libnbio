@@ -7,6 +7,9 @@
 
 #define NBIO_MAX_DELIMITER_LEN 4 /* normally one of \n, \r, \r\n, \r\n\r\n */
 
+#ifdef NBIO_USE_WINSOCK2
+#include <errcompat.h>
+#endif
 
 typedef struct nbio_buf_s {
 	unsigned char *data;
