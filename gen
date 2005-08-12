@@ -1,9 +1,13 @@
 #!/bin/sh
-libtoolize -f -c ;
-aclocal ;
-autoheader ;
-automake --foreign -a -c ;
-autoconf ;
+if [ "$LIBTOOLIZE" = "" ]; then
+	LIBTOOL=`which libtool`
+	LIBTOOLIZE=`which libtoolize`
+fi
+$LIBTOOLIZE -f -c
+aclocal
+autoheader
+automake --foreign -a -c
+autoconf
 automake --foreign
 
 

@@ -58,7 +58,7 @@ static void wsa_seterrno(void)
 	else if (err == WSAESHUTDOWN)
 		errno = ESHUTDOWN;
 	else if (err == WSAEWOULDBLOCK)
-		errno = EAGAIN;
+		errno = EINPROGESS;
 	else if (err == WSAEMSGSIZE)
 		errno = EMSGSIZE;
 	else if (err == WSAEINVAL)
@@ -75,7 +75,7 @@ static void wsa_seterrno(void)
 	return;
 }
 
-nbio_sockfd_t fdt_newsocket(nbio_t *nb, int family, int type)
+nbio_sockfd_t fdt_newsocket(int family, int type)
 {
 	nbio_sockfd_t fd;
 
@@ -87,11 +87,28 @@ nbio_sockfd_t fdt_newsocket(nbio_t *nb, int family, int type)
 	return fd;
 }
 
-int fdt_read(nbio_fd_t *fdt, void *buf, int count)
+int fdt_readfd(nbio_sockfd_t fd, void *buf, int count)
 {
 	int ret;
 
-	if ((ret = recv(fdt->fd, buf, count, 0)) == SOCKET_ERROR) {
+	if ((ret = recv(fd, buf, count, 0)) == SOCKET_ERROR) {
+		wsa_seterrno();
+		return -1;
+	}
+
+	return ret;
+}
+
+int fdt_read(nbio_fd_t *fdt, void *buf, int count)
+{
+	return fdt_readfd(fdt->fd, buf, count);
+}
+
+int fdt_writefd(nbio_sockfd_t fd, const void *buf, int count)
+{
+	int ret;
+
+	if ((ret = send(fd, buf, count, 0)) == SOCKET_ERROR) {
 		wsa_seterrno();
 		return -1;
 	}
@@ -101,21 +118,17 @@ int fdt_read(nbio_fd_t *fdt, void *buf, int count)
 
 int fdt_write(nbio_fd_t *fdt, const void *buf, int count)
 {
-	int ret;
+	return fdt_writefd(fdt->fd, buf, count);
+}
 
-	if ((ret = send(fdt->fd, buf, count, 0)) == SOCKET_ERROR) {
-		wsa_seterrno();
-		return -1;
-	}
-
-	return ret;
+int fdt_closefd(nbio_sockfd_t fd)
+{
+	return closesocket(fd);
 }
 
 void fdt_close(nbio_fd_t *fdt)
 {
-
-	closesocket(fdt->fd);
-
+	fdt_closefd(fdt->fd);
 	return;
 }
 
@@ -202,6 +215,11 @@ static int setmaxfd(nbio_t *nb)
 	nbio_fd_t *cur;
 
 	for (cur = (nbio_fd_t *)nb->fdlist; cur; cur = cur->next) {
+		struct fdtdata *data = (struct fdtdata *)cur->intdata;
+
+		if (data->flags == WANT_NONE)
+			continue;
+
 		if (cur->fd > maxfd)
 			maxfd = cur->fd;
 	}
@@ -268,9 +286,11 @@ int pfdpoll(nbio_t *nb, int timeout)
 	FD_ZERO(&rfds);
 	FD_ZERO(&wfds);
 
-	memset(&tv, 0, sizeof(tv));
-	tv.tv_sec = timeout / 1000;
-	tv.tv_usec = (timeout % 1000) * 1000;
+	if (timeout != -1) {
+		memset(&tv, 0, sizeof(tv));
+		tv.tv_sec = timeout / 1000;
+		tv.tv_usec = (timeout % 1000) * 1000;
+	}
 
 	for (cur = (nbio_fd_t *)nb->fdlist; cur; cur = cur->next) {
 		struct fdtdata *data = (struct fdtdata *)cur->intdata;
@@ -287,7 +307,8 @@ int pfdpoll(nbio_t *nb, int timeout)
 	}
 
 	errno = 0;
-	if ((selret = select(nbd->maxfd+1, &rfds, &wfds, NULL, &tv)) == SOCKET_ERROR) {
+	if ((selret = select(nbd->maxfd+1, &rfds, &wfds, NULL,
+			     (timeout == -1) ? NULL : &tv)) == SOCKET_ERROR) {
 
 		wsa_seterrno();
 
@@ -310,12 +331,18 @@ int pfdpoll(nbio_t *nb, int timeout)
 			continue;
 		}
 
-		if (FD_ISSET(cur->fd, &rfds)) {
+		/*
+		 * Remember that the __fdt_ready_*() functions can close
+		 * connections.
+		 */
+		if (!(cur->flags & NBIO_FDT_FLAG_CLOSED) &&
+					FD_ISSET(cur->fd, &rfds)) {
 			if (__fdt_ready_in(nb, cur) == -1)
 				return -1;
 		}
 
-		if (FD_ISSET(cur->fd, &wfds)) {
+		if (!(cur->flags & NBIO_FDT_FLAG_CLOSED) &&
+					FD_ISSET(cur->fd, &wfds)) {
 			if (__fdt_ready_out(nb, cur) == -1)
 				return -1;
 		}
@@ -339,6 +366,8 @@ void fdt_setpollin(nbio_t *nb, nbio_fd_t *fdt, int val)
 	else
 		data->flags &= ~WANT_READ;
 
+	setmaxfd(nb);
+
 	return;
 }
 
@@ -352,6 +381,8 @@ void fdt_setpollout(nbio_t *nb, nbio_fd_t *fdt, int val)
 	else
 		data->flags &= ~WANT_WRITE;
 
+	setmaxfd(nb);
+
 	return;
 }
 
@@ -361,6 +392,8 @@ void fdt_setpollnone(nbio_t *nb, nbio_fd_t *fdt)
 	struct fdtdata *data = (struct fdtdata *)fdt->intdata;
 
 	data->flags &= ~(WANT_READ | WANT_WRITE);
+
+	setmaxfd(nb);
 
 	return;
 }
@@ -430,12 +463,11 @@ static int fdt_connect_handler(void *nbv, int event, nbio_fd_t *fdt)
 	return 0;
 }
 
-static int connectwrap(nbio_sockfd_t fd, const struct sockaddr *addr, int addrlen)
+int fdt_connectfd(nbio_sockfd_t fd, const struct sockaddr *addr, int addrlen)
 {
 	int ret;
 
-	ret = connect(fd, (struct sockaddr *)addr, addrlen);
-
+	ret = connect(fd, addr, addrlen);
 	if (ret == SOCKET_ERROR)
 		wsa_seterrno();
 
@@ -453,7 +485,7 @@ int fdt_connect(nbio_t *nb, const struct sockaddr *addr, int addrlen, nbio_handl
 		return -1;
 	}
 
-	if ((fd = fdt_newsocket(nb, addr->sa_family, SOCK_STREAM)) == -1)
+	if ((fd = fdt_newsocket(addr->sa_family, SOCK_STREAM)) == -1)
 		return -1;
 
 	if (fdt_setnonblock(fd) == -1) {
@@ -463,16 +495,16 @@ int fdt_connect(nbio_t *nb, const struct sockaddr *addr, int addrlen, nbio_handl
 	}
 
 
-	if ((connectwrap(fd, addr, addrlen) == SOCKET_ERROR) &&
-			(errno != EAGAIN) &&
-			(errno != EINPROGRESS)) {
+	if ((fdt_connectfd(fd, addr, addrlen) == SOCKET_ERROR) &&
+						(errno != EAGAIN) &&
+						(errno != EINPROGRESS)) {
 		fprintf(stderr, "fdt_conenct: connect failed: %d, %d, %d, %s\n", fd, addrlen, errno, strerror(errno));
-		closesocket(fd);
+		fdt_closefd(fd);
 		return -1;
 	}
 
 	if (!(ci = malloc(sizeof(struct connectinginfo)))) {
-		closesocket(fd);
+		fdt_closefd(fd);
 		return -1;
 	}
 
@@ -481,7 +513,7 @@ int fdt_connect(nbio_t *nb, const struct sockaddr *addr, int addrlen, nbio_handl
 
 	if (!(fdt = nbio_addfd(nb, NBIO_FDTYPE_STREAM, fd, 0, fdt_connect_handler, (void *)ci, 0, 0))) {
 		fprintf(stderr, "fdt_conenct: nbio_addfd failed: %s\n", strerror(errno));
-		closesocket(fd);
+		fdt_closefd(fd);
 		free(ci);
 		errno = EINVAL;
 		return -1;
@@ -490,6 +522,69 @@ int fdt_connect(nbio_t *nb, const struct sockaddr *addr, int addrlen, nbio_handl
 	nbio_setraw(nb, fdt, 1);
 
 	return 0;
+}
+
+nbio_sockfd_t fdt_acceptfd(nbio_sockfd_t fd, struct sockaddr *saret, int *salen)
+{
+	int ret;
+
+	ret = accept(fd, saret, salen);
+	if (ret == SOCKET_ERROR)
+		wsa_seterrno();
+
+	return ret;
+}
+
+int fdt_bindfd(nbio_sockfd_t fd, struct sockaddr *sa, int salen)
+{
+	int ret;
+
+	ret = bind(fd, sa, salen);
+	if (ret == SOCKET_ERROR)
+		wsa_seterrno();
+
+	return ret;
+}
+
+int fdt_listenfd(nbio_sockfd_t fd)
+{
+	int ret;
+
+	ret = listen(fd, 1024);
+	if (ret == SOCKET_ERROR)
+		wsa_seterrno();
+
+	return ret;
+}
+
+nbio_sockfd_t fdt_newlistener(unsigned short portnum)
+{
+	nbio_sockfd_t sfd;
+	const char on = 1;
+	struct sockaddr_in sin;
+
+	/* bind all interfaces */
+	memset(&sin, 0, sizeof(struct sockaddr_in));
+	sin.sin_family = AF_INET;
+	sin.sin_port = portnum;
+
+	if ((sfd = fdt_newsocket(PF_INET, SOCK_STREAM)) == -1)
+		return -1;
+
+	/* XXX does this work on winsock? */
+	setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+
+	if (fdt_bindfd(sfd, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
+		fdt_closefd(sfd);
+		return -1;
+	}
+
+	if (fdt_listenfd(sfd) == -1) {
+		fdt_closefd(sfd);
+		return -1;
+	}
+
+	return sfd;
 }
 
 #endif /* NBIO_USE_WINSOCK2 */

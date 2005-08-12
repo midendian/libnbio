@@ -1,2 +1,0 @@
-#undef NBIO_USE_KQUEUE
-

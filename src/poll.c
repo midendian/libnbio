@@ -20,7 +20,7 @@
 #include <config.h>
 #endif
 
-#if !defined(NBIO_USE_KQUEUE) && !defined(NBIO_USE_WINSOCK2)
+#if !defined(NBIO_USE_KQUEUE) && !defined(NBIO_USE_WINSOCK2) && !defined(NBIO_USE_SELECT)
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -34,10 +34,17 @@
 #include <sys/socket.h>
 #endif
 
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-#include <errno.h>
+#endif
 
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
+#endif
+
+#ifdef HAVE_SYS_POLL_H
 #include <sys/poll.h>
+#endif
 
 #include <libnbio.h>
 #include "impl.h"
@@ -237,21 +244,26 @@ int pfdpoll(nbio_t *nb, int timeout)
 			}
 
 			pfd = (struct pollfd *)cur->intdata;
+			if (pfd) {
+				if (!(cur->flags & NBIO_FDT_FLAG_CLOSED) &&
+						(pfd->revents & POLLIN)) {
+					if (__fdt_ready_in(nb, cur) == -1)
+						return -1;
+				}
 
-			if (pfd && pfd->revents & POLLIN) {
-				if (__fdt_ready_in(nb, cur) == -1)
-					return -1;
-			}
+				if (!(cur->flags & NBIO_FDT_FLAG_CLOSED) &&
+						(pfd->revents & POLLOUT)) {
+					if (__fdt_ready_out(nb, cur) == -1)
+						return -1;
+				}
 
-			if (pfd && pfd->revents & POLLOUT) {
-				if (__fdt_ready_out(nb, cur) == -1)
-					return -1;
-			}
-
-			if (pfd && ((pfd->revents & POLLERR) ||
-					 (pfd->revents & POLLHUP))) {
-				if (__fdt_ready_eof(nb, cur) == -1)
-					return -1;
+				if (!(cur->flags & NBIO_FDT_FLAG_CLOSED) &&
+						((pfd->revents & POLLERR) ||
+						 (pfd->revents & POLLHUP) ||
+						 (pfd->revents & POLLNVAL))) {
+					if (__fdt_ready_eof(nb, cur) == -1)
+						return -1;
+				}
 			}
 
 			if (__fdt_ready_all(nb, cur) == -1)
