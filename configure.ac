@@ -1,7 +1,6 @@
-AC_INIT(libnbio, 0.20)
-AC_CONFIG_SRCDIR(src/libnbio.c)
+AC_INIT(src/libnbio.c)
+AM_INIT_AUTOMAKE(libnbio, 0.20, [nodefine])
 AM_CONFIG_HEADER(include/config.h)
-AM_INIT_AUTOMAKE
 
 AM_MAINTAINER_MODE
 

@@ -1,5 +1,5 @@
 
-include_HEADERS = \
+pkginclude_HEADERS = \
 	libnbio.h \
 	errcompat.h
 
