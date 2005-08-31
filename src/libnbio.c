@@ -38,6 +38,8 @@
 
 #include <libnbio.h>
 #include "impl.h"
+#include "resolv.h"
+
 
 /* XXX this should be elimitated by using more bookkeeping */
 static void setmaxpri(nbio_t *nb)
@@ -295,8 +297,13 @@ int nbio_init(nbio_t *nb, int pfdsize)
 
 	memset(nb, 0, sizeof(nbio_t));
 
-	if (pfdinit(nb, pfdsize) == -1)
+	if (nbio_resolv__init(nb) == -1)
 		return -1;
+
+	if (pfdinit(nb, pfdsize) == -1) {
+		nbio_resolv__free(nb);
+		return -1;
+	}
 
 	setmaxpri(nb);
 
@@ -318,6 +325,8 @@ int nbio_kill(nbio_t *nb)
 	nbio_cleanuponly(nb); /* to clean up the list */
 
 	pfdkill(nb);
+
+	nbio_resolv__free(nb);
 
 	return 0;
 }

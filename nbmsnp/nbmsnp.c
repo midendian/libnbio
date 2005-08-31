@@ -101,7 +101,6 @@ static int sigusr2_matcher(nbio_t *nb, void *ud, nbio_fd_t *fdt)
 
 static void sigusr2(int signum)
 {
-	struct msninfo *mi = (struct msninfo *)gnb.priv;
 
 	dprintf("clearing all SBs...\n");
 
@@ -123,7 +122,6 @@ int main(int argc, char **argv)
 	};
 	const char *host = NULL;
 	char password[128+1] = {""};
-	int i;
 	time_t lastrun, loginstart, lastping;
 	int logintimeout = 1;
 
@@ -307,7 +305,7 @@ static int connectmsn_handler(void *nbv, int event, nbio_fd_t *fdt)
 			return 0;
 		}
 
-		nbio_adddelim(nb, mci->fdt, MSN_CMD_DELIM, MSN_CMD_DELIM_LEN);
+		nbio_adddelim(nb, mci->fdt, (const unsigned char *)MSN_CMD_DELIM, MSN_CMD_DELIM_LEN);
 
 		if (mci->type == MCI_TYPE_NS)
 			mci->mi->nsconn = mci->fdt;
@@ -358,38 +356,34 @@ static int connectmsn_handler(void *nbv, int event, nbio_fd_t *fdt)
 	return 0;
 }
 
-static int connectmsn(nbio_t *nb, const char *host, void *priv)
+struct connectmsn_lookup_data {
+	unsigned short port;
+	void *priv;
+};
+
+static int connectmsn_lookupcallback(nbio_t *nb, void *udata, const char *query, struct hostent *hp)
 {
+	struct connectmsn_lookup_data *ld = (struct connectmsn_lookup_data *)udata;
 	struct sockaddr_in sa;
-	struct hostent *hp;
-	unsigned short port = 1863;
-	char *newhost;
 
-	newhost = strdup(host);
-	if (strchr(newhost, ':')) {
-		port = (unsigned short) atoi(strchr(newhost, ':')+1);
-		*(strchr(newhost, ':')) = '\0';
+	if (!hp) {
+		dvprintf("connectmsn: unable to connect to %s -- nbio_gethostbyname failed\n", query);
+		free(ld);
+		return -1; /* kill app */
 	}
 
-	if (!(hp = gethostbyname(newhost ? newhost : host))) {
-		dvprintf("connectmsn: unable to connect to %s -- gethostbyname failed\n", host);
-		free(newhost);
-		return -1;
-	}
-
-	dvprintf("got IP for hostname %s\n", newhost);
-
-	free(newhost);
+	dvprintf("got IP for hostname '%s'\n", query);
 
 	memset(&sa, 0, sizeof(struct sockaddr_in));
-	sa.sin_port = htons(port);
+	sa.sin_port = htons(ld->port);
 	memcpy(&sa.sin_addr, hp->h_addr, hp->h_length);
 	sa.sin_family = hp->h_addrtype;
 
 	if (nbio_connect(&gnb, (struct sockaddr *)&sa,
 				sizeof(struct sockaddr_in),
-				connectmsn_handler, priv) == -1) {
-		dvprintf("connectmsn: unable to connect to %s -- %s\n", host, strerror(errno));
+				connectmsn_handler, ld->priv) == -1) {
+		dvprintf("connectmsn: unable to connect to %s -- %s\n", query, strerror(errno));
+		free(ld);
 		return -1;
 	}
 
@@ -407,6 +401,37 @@ static int connectmsn(nbio_t *nb, const char *host, void *priv)
 
 	return fd;
 #endif
+	free(ld);
+	return 0;
+}
+
+static int connectmsn(nbio_t *nb, const char *host, void *priv)
+{
+	struct connectmsn_lookup_data *ld;
+	char *newhost;
+
+	/* C can be so annoying sometimes. */
+	if (!(ld = (struct connectmsn_lookup_data *)malloc(sizeof(struct connectmsn_lookup_data))))
+		return -1;
+	ld->port = 1863;
+	ld->priv = priv;
+
+	newhost = strdup(host);
+	if (strchr(newhost, ':')) {
+		ld->port = (unsigned short) atoi(strchr(newhost, ':')+1);
+		*(strchr(newhost, ':')) = '\0';
+	}
+
+	if (nbio_gethostbyname(nb, connectmsn_lookupcallback, ld, newhost ? newhost : host) == -1) {
+		dvprintf("connectmsn: unable to connect to %s -- nbio_gethostbyname failed\n", host);
+		free(newhost);
+		free(ld);
+		return -1;
+	}
+
+	dvprintf("gethostbyname started for '%s'\n", newhost);
+
+	free(newhost);
 	return 0;
 }
 
@@ -574,7 +599,7 @@ static int handlecmd(nbio_fd_t *fdt)
 	if (mci->state == MCI_STATE_WAITINGFORCMD) {
 		int ret = 0;
 
-		if (strncmp(buf, "MSG", 3) == 0) {
+		if (strncmp((const char *)buf, "MSG", 3) == 0) {
 			char *dataptr, *handle, *custom, *lenstr;
 			int msglen;
 
@@ -591,7 +616,7 @@ static int handlecmd(nbio_fd_t *fdt)
 			 */
 
 			/* Grr.. They don't put TrID's on MSG's.  Damnit. */
-			dataptr = buf+4; /* "MSG " */
+			dataptr = (char *)buf+4; /* "MSG " */
 			handle = dataptr;
 
 			if (!(custom = strchr(handle, ' '))) {
@@ -664,7 +689,7 @@ static int handlecmd(nbio_fd_t *fdt)
 				buf);
 		}
 
-		if ((ret = processmsncmd(fdt, buf, NULL)) < 0) {
+		if ((ret = processmsncmd(fdt, (char *)buf, NULL)) < 0) {
 			free(buf);
 			return ret;
 		}
@@ -680,7 +705,7 @@ static int handlecmd(nbio_fd_t *fdt)
 		int plen, poff;
 		int ret = 0;
 
-		if (!(payload = nbio_remtoprxvector(mci->mi->nb, fdt, &plen, &poff))) {
+		if (!(payload = (char *)nbio_remtoprxvector(mci->mi->nb, fdt, &plen, &poff))) {
 			fdtperror(fdt, "handlecmd: nbio_remtoprxvector", errno, "no data buffer waiting! (payload)\n");
 
 			return -2;
@@ -723,7 +748,7 @@ static int handlecmd(nbio_fd_t *fdt)
 				payload);
 		}
 
-		if ((ret = processmsncmd(fdt, buf, payload)) < 0) {
+		if ((ret = processmsncmd(fdt, (char *)buf, payload)) < 0) {
 			free(payload);
 			free(buf);
 			return ret;
@@ -736,7 +761,7 @@ static int handlecmd(nbio_fd_t *fdt)
 		addmsnvec(mci->mi->nb, fdt);
 
 		/* go back to delimited mode */
-		if (nbio_adddelim(mci->mi->nb, fdt, MSN_CMD_DELIM, MSN_CMD_DELIM_LEN) == -1) {
+		if (nbio_adddelim(mci->mi->nb, fdt, (const unsigned char *)MSN_CMD_DELIM, MSN_CMD_DELIM_LEN) == -1) {
 			fdtperror(fdt, "handlecmd: nbio_adddelim", errno, "");
 			return -2;
 		}

@@ -31,6 +31,10 @@ extern "C" {
 #include <sys/socket.h>
 #endif
 
+#ifdef HAVE_NETDB_H
+#include <netdb.h>
+#endif
+
 #include <time.h> /* for time_t */
 
 #define NBIO_MAX_DELIMITER_LEN 4 /* normally one of \n, \r, \r\n, \r\n\r\n */
@@ -145,11 +149,15 @@ typedef struct nbio_fd_s {
 
 typedef int (*nbio_handler_t)(void *, int event, nbio_fd_t *);
 
+/* used only by resolv.c */
+struct nbio__resolvinfo;
+
 typedef struct {
 	void *fdlist;
 	int maxpri;
 	void *intdata;
 	void *priv;
+	struct nbio__resolvinfo *resolv;
 #if 0
 #ifdef NBIO_USEKQUEUE
 	int kq;
@@ -229,6 +237,17 @@ int nbio_cleardelim(nbio_fd_t *fdt);
  * Set or clear the KEEPDELIM flag.
  */
 int nbio_setkeepdelim(nbio_fd_t *fdt, int val);
+
+/*
+ * Non-blocking DNS resolution.  Returns struct hostent to callback, just as
+ * gethostbyname() would have.  Returning -1 from the callback is the same as
+ * if it was returned from a nbio_poll callback (will kill the loop).
+ *
+ * Only supports /etc/hosts and DNS ("files" and "dns" in nsswitch.conf terms).
+ * Does not support NIS(+), LDAP, etc, because they're a pain in the ass.
+ */
+typedef int (*nbio_gethostbyname_callback_t)(nbio_t *nb, void *udata, const char *query, struct hostent *hp);
+int nbio_gethostbyname(nbio_t *nb, nbio_gethostbyname_callback_t ufunc, void *udata, const char *query);
 
 #ifdef __cplusplus
 }
