@@ -32,6 +32,12 @@
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
@@ -117,8 +123,9 @@ int fdt_listenfd(nbio_sockfd_t fd)
  * IPv6 made this nice and complicated for us. Should probably actually support
  * IPv6 someday.
  */
-nbio_sockfd_t fdt_newlistener(unsigned short portnum)
+nbio_sockfd_t fdt_newlistener(const char *addr, unsigned short portnum)
 {
+#if 0 /* why the hell did i do all this. */
 	nbio_sockfd_t sfd;
 	const int on = 1;
 	struct addrinfo hints, *res, *ressave;
@@ -149,6 +156,31 @@ nbio_sockfd_t fdt_newlistener(unsigned short portnum)
 		return -1;
 	}
 	freeaddrinfo(ressave);
+#else
+	nbio_sockfd_t sfd;
+	struct sockaddr_in sin;
+	const int on = 1;
+
+	sfd = fdt_newsocket(AF_INET, SOCK_STREAM);
+	if (sfd == -1)
+		return -1;
+
+	memset(&sin, 0, sizeof(struct sockaddr_in));
+	sin.sin_family = AF_INET;
+	if (addr) {
+		if (inet_pton(AF_INET, addr, &sin.sin_addr) != 1) {
+			fdt_closefd(sfd);
+			return -1;
+		}
+	} /* otherwise left zeroed out */
+	sin.sin_port = htons(portnum);
+
+	setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+	if (fdt_bindfd(sfd, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
+		fdt_closefd(sfd);
+		return -1;
+	}
+#endif
 
 	if (fdt_listenfd(sfd) == -1)
 		return -1;

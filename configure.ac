@@ -8,7 +8,7 @@ AC_PROG_CC
 AC_ISC_POSIX
 AC_HEADER_STDC
 AM_PROG_LIBTOOL
-AC_CHECK_HEADERS(arpa/inet.h errno.h fcntl.h netdb.h stdio.h stdlib.h string.h sys/poll.h sys/socket.h sys/types.h time.h unistd.h)
+AC_CHECK_HEADERS(arpa/inet.h errno.h fcntl.h netdb.h stdio.h stdlib.h string.h sys/poll.h sys/socket.h sys/types.h time.h unistd.h netinet/in.h)
 
 case "$ac_cv_host" in
 	*-*-darwin*)

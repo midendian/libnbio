@@ -557,7 +557,8 @@ int fdt_listenfd(nbio_sockfd_t fd)
 	return ret;
 }
 
-nbio_sockfd_t fdt_newlistener(unsigned short portnum)
+/* XXX ignores addr right now */
+nbio_sockfd_t fdt_newlistener(const char *addr, unsigned short portnum)
 {
 	nbio_sockfd_t sfd;
 	const char on = 1;

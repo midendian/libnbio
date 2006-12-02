@@ -831,8 +831,8 @@ nbio_sockfd_t nbio_getincomingconn(nbio_t *nb, nbio_fd_t *fdt, struct sockaddr *
 	return nbio_sfd_accept(nb, fdt->fd, saret, salen);
 }
 
-nbio_sockfd_t nbio_sfd_newlistener(nbio_t *nb, unsigned short port)
+nbio_sockfd_t nbio_sfd_newlistener(nbio_t *nb, const char *addr, unsigned short port)
 {
-	return fdt_newlistener(port);
+	return fdt_newlistener(addr, port);
 }
 

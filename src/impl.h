@@ -35,7 +35,7 @@ int fdt_connectfd(nbio_sockfd_t fd, const struct sockaddr *addr, int addrlen);
 int fdt_readfd(nbio_sockfd_t fd, void *buf, int count);
 int fdt_writefd(nbio_sockfd_t fd, const void *buf, int count);
 int fdt_closefd(nbio_sockfd_t fd);
-nbio_sockfd_t fdt_newlistener(unsigned short portnum);
+nbio_sockfd_t fdt_newlistener(const char *addr, unsigned short portnum);
 
 /* initialize nb */
 int pfdinit(nbio_t *nb, int pfdsize);

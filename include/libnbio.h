@@ -190,7 +190,7 @@ int nbio_sfd_read(nbio_t *nb, nbio_sockfd_t fd, void *buf, int count);
 int nbio_sfd_write(nbio_t *nb, nbio_sockfd_t fd, const void *buf, int count);
 nbio_sockfd_t nbio_sfd_accept(nbio_t *nb, nbio_sockfd_t fd, struct sockaddr *saret, int *salen);
 nbio_sockfd_t nbio_getincomingconn(nbio_t *nb, nbio_fd_t *fdt, struct sockaddr *saret, int *salen);
-nbio_sockfd_t nbio_sfd_newlistener(nbio_t *nb, unsigned short portnum);
+nbio_sockfd_t nbio_sfd_newlistener(nbio_t *nb, const char *addr, unsigned short port);
 nbio_sockfd_t nbio_sfd_new_stream(nbio_t *nb);
 int nbio_sfd_setnonblocking(nbio_t *nb, nbio_sockfd_t fd);
 int nbio_sfd_connect(nbio_t *nb, nbio_sockfd_t fd, struct sockaddr *sa, int salen);
